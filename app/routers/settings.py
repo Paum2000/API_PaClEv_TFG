@@ -1,21 +1,32 @@
-from fastapi import APIRouter
-from app.schemas.setting import SettingCreate, SettingOut, SettingUpdate
+from fastapi import APIRouter, Depends, HTTPException
+from sqlmodel import Session
+
+from app.models.setting import SettingCreate, SettingOut, SettingUpdate
+from app.services import setting_service
+from app.db.session import get_session
 
 router = APIRouter(prefix="/settings", tags=["Settings"])
 
 @router.post("/", response_model=SettingOut)
-def create_setting(setting: SettingCreate):
-    return {"message": "Endpoint listo. Lógica pendiente en ramas."}
+def create_setting(setting: SettingCreate, db: Session = Depends(get_session)):
+    return setting_service.create_setting(db, setting)
 
-# Nota: Settings suele ser 1 a 1 con el usuario, por eso buscamos por user_id
 @router.get("/user/{user_id}", response_model=SettingOut)
-def get_user_setting(user_id: int):
-    return {"message": "Endpoint listo. Lógica pendiente en ramas."}
+def get_user_setting(user_id: int, db: Session = Depends(get_session)):
+    setting = setting_service.get_user_setting(db, user_id)
+    if not setting:
+        raise HTTPException(status_code=404, detail="Configuración no encontrada para este usuario")
+    return setting
 
 @router.put("/{setting_id}", response_model=SettingOut)
-def update_setting(setting_id: int, setting: SettingUpdate):
-    return {"message": "Endpoint de edición listo. Lógica pendiente."}
+def update_setting(setting_id: int, setting: SettingUpdate, db: Session = Depends(get_session)):
+    updated_setting = setting_service.update_setting(db, setting_id, setting)
+    if not updated_setting:
+        raise HTTPException(status_code=404, detail="Configuración no encontrada")
+    return updated_setting
 
 @router.delete("/{setting_id}")
-def delete_setting(setting_id: int):
-    return {"message": f"Configuración {setting_id} eliminada. Lógica pendiente."}
+def delete_setting(setting_id: int, db: Session = Depends(get_session)):
+    if not setting_service.delete_setting(db, setting_id):
+        raise HTTPException(status_code=404, detail="Configuración no encontrada")
+    return {"message": "Configuración eliminada correctamente."}
