@@ -95,3 +95,33 @@ def test_delete_user_exito(client: TestClient):
 def test_delete_user_no_existe(client: TestClient):
     response = client.delete("/users/9999")
     assert response.status_code == 404
+
+def test_upload_user_photo(client: TestClient):
+    # 1. Primero creamos un usuario
+    response_create = client.post(
+        "/users/",
+        json={"user_name": "Fotografo", "email": "foto@test.com", "password": "123"}
+    )
+    user_id = response_create.json()["id"]
+
+    # 2. Simulamos el contenido de una imagen en binario
+    # No necesitamos una imagen real, solo un puñado de bytes simulando ser un archivo
+    contenido_falso_imagen = b"esto_es_una_imagen_falsa_en_bytes"
+
+    # Preparamos el archivo para enviarlo (nombre del campo, tupla con: nombre de archivo, contenido, tipo MIME)
+    archivos = {
+        "file": ("mi_cara.jpg", contenido_falso_imagen, "image/jpeg")
+    }
+
+    # 3. Hacemos la petición POST enviando el archivo
+    response_upload = client.post(f"/users/{user_id}/photo", files=archivos)
+
+    # 4. Comprobaciones
+    assert response_upload.status_code == 200
+    datos = response_upload.json()
+    assert datos["message"] == "Foto subida con éxito"
+    assert "mi_cara.jpg" in datos["photo_url"]
+
+    # 5. Comprobamos que el usuario en DB se ha actualizado
+    response_get = client.get(f"/users/{user_id}")
+    assert response_get.json()["user_photo"] == datos["photo_url"]
