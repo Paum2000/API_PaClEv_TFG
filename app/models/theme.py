@@ -1,7 +1,7 @@
 from beanie import Document, before_event, Insert
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
-from app.models.counter import get_next_id
+from app.models.counter import get_next_id_fast
 
 # --- 1. CLASE BASE (Atributos comunes) ---
 # Contiene los datos que comparten la base de datos y la API.
@@ -16,11 +16,10 @@ class Theme(Document, ThemeBase):
     class Settings:
         name = "themes"
 
-    # Generador automático del ID numérico al insertar
     @before_event(Insert)
-    async def assign_id(self):
-        if not self.id:
-            self.id = await get_next_id("themes_id")
+    def assign_id(self):
+        if self.id is None:
+            self.id = get_next_id_fast()
 
 # --- 3. MODELO DE CREACIÓN (POST) ---
 # Como al crear un tema solo necesitamos el nombre, hereda directamente
