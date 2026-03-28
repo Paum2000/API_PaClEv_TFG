@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  # 1. La base de datos MongoDB real
+  mongodb:
+    image: mongo:latest
+    container_name: paclev_mongo
+    ports:
+      # Exponemos el puerto para poder conectarnos a la BD
+      - "27017:27017"
+    volumes:
+      # Guardamos los datos físicamente para que no se borren al apagar
+      - mongo_data:/data/db
+
+  # 2. Tu API FastAPI
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: paclev_api
+    ports:
+      # Exponemos el puerto 8000 para conectarnos por este
+      - "8000:8000"
+    environment:
+      # Conectamos la API a la BD de este entorno
+      - MONGODB_URL=mongodb://mongodb:27017
+      - DATABASE_NAME=agenda_db
+    depends_on:
+      - mongodb
+    volumes:
+      # Sincronizamos all código en tiempo real (para no tener que reconstruir al cambiar algo)
+      - .:/app
+
+volumes:
+  mongo_data:

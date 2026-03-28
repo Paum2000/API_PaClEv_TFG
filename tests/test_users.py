@@ -104,24 +104,23 @@ def test_upload_user_photo(client: TestClient):
     )
     user_id = response_create.json()["id"]
 
-    # 2. Simulamos el contenido de una imagen en binario
-    # No necesitamos una imagen real, solo un puñado de bytes simulando ser un archivo
+    # 2. Simulamos el archivo
     contenido_falso_imagen = b"esto_es_una_imagen_falsa_en_bytes"
-
-    # Preparamos el archivo para enviarlo (nombre del campo, tupla con: nombre de archivo, contenido, tipo MIME)
     archivos = {
         "file": ("mi_cara.jpg", contenido_falso_imagen, "image/jpeg")
     }
 
-    # 3. Hacemos la petición POST enviando el archivo
+    # 3. Hacemos la petición POST
     response_upload = client.post(f"/users/{user_id}/photo", files=archivos)
 
-    # 4. Comprobaciones
+    # 4. Comprobaciones actualizadas
     assert response_upload.status_code == 200
     datos = response_upload.json()
-    assert datos["message"] == "Foto subida con éxito"
-    assert "mi_cara.jpg" in datos["photo_url"]
 
-    # 5. Comprobamos que el usuario en DB se ha actualizado
+    # Ahora comprobamos directamente los campos del UserOut
+    assert "user_photo" in datos
+    assert "mi_cara.jpg" in datos["user_photo"]
+
+    # 5. Comprobamos que si lo volvemos a pedir con GET, la foto sigue ahí
     response_get = client.get(f"/users/{user_id}")
-    assert response_get.json()["user_photo"] == datos["photo_url"]
+    assert response_get.json()["user_photo"] == datos["user_photo"]

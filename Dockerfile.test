@@ -1,0 +1,18 @@
+# Usamos una imagen ligera de Python
+FROM python:3.11-slim
+
+# Directorio de trabajo dentro del contenedor
+WORKDIR /app
+
+# Copiamos primero el archivo de dependencias para aprovechar la caché de Docker
+COPY requirements.txt .
+
+# Instalamos las dependencias normales y las de testing (pytest, httpx)
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install pytest httpx asgi-lifespan
+
+# Copiamos el resto del código (tu app, los tests, etc.)
+COPY . .
+
+# Generamos el reporte en consola y también en una carpeta HTML
+CMD ["pytest", "tests/", "--cov=app", "--cov-report=term-missing", "--cov-report=html", "-v", "--disable-warnings"]

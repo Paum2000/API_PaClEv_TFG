@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  mongo_test:
+    image: mongo:latest
+    container_name: tfg_mongo_test
+
+  api_test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: tfg_api_test
+    environment:
+      - MONGODB_URL=mongodb://mongo_test:27017
+      - DATABASE_NAME=agenda_testing_db
+    depends_on:
+      - mongo_test
+    volumes:
+      - ./htmlcov:/app/htmlcov
