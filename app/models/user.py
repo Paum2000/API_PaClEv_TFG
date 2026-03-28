@@ -5,7 +5,6 @@ from datetime import datetime
 
 from app.models.counter import get_next_id
 
-
 class User(Document):
     id: Optional[int] = Field(default=None)
     user_name: str
@@ -17,17 +16,21 @@ class User(Document):
     class Settings:
         name = "users"
 
-    # Justo antes de hacer un .insert(), Beanie ejecutará esta función
     @before_event(Insert)
     async def assign_id(self):
         if not self.id:
-            # Llama al contador pidiendo el siguiente número para la colección 'events'
-            self.id = await get_next_id("events_id")
+            self.id = await get_next_id("users_id")
 
 class UserCreate(BaseModel):
     user_name: str
     email: EmailStr
     password: str
+    birthday: Optional[datetime] = None
+
+class UserUpdate(BaseModel):
+    user_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    password: Optional[str] = None
     birthday: Optional[datetime] = None
 
 class UserOut(BaseModel):

@@ -5,24 +5,21 @@ from datetime import datetime
 
 from app.models.counter import get_next_id
 
-
 class Event(Document):
-    id: Optional[int] = None
+    id: Optional[int] = Field(default=None)
     title: str
     description: Optional[str] = None
     start_datetime: datetime
     end_datetime: datetime
     is_all_day: bool = False
-    user_id: int
+    user_id: int # Relación con el usuario
 
     class Settings:
         name = "events"
 
-    # Justo antes de hacer un .insert(), Beanie ejecutará esta función
     @before_event(Insert)
     async def assign_id(self):
         if not self.id:
-            # Llama al contador pidiendo el siguiente número para la colección 'events'
             self.id = await get_next_id("events_id")
 
 class EventCreate(BaseModel):

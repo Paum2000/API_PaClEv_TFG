@@ -4,7 +4,6 @@ from typing import Optional
 
 from app.models.counter import get_next_id
 
-
 class Theme(Document):
     id: Optional[int] = Field(default=None)
     name: str
@@ -12,11 +11,9 @@ class Theme(Document):
     class Settings:
         name = "themes"
 
-    # Justo antes de hacer un .insert(), Beanie ejecutará esta función
     @before_event(Insert)
     async def assign_id(self):
         if not self.id:
-            # Llama al contador pidiendo el siguiente número para la colección 'events'
             self.id = await get_next_id("themes_id")
 
 class ThemeCreate(BaseModel):

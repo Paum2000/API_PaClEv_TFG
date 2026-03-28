@@ -1,21 +1,28 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from typing import List
-from app.schemas.theme import ThemeCreate, ThemeOut, ThemeUpdate
+
+from app.models.theme import ThemeCreate, ThemeOut, ThemeUpdate
+from app.services import theme_service
 
 router = APIRouter(prefix="/themes", tags=["Themes"])
 
 @router.post("/", response_model=ThemeOut)
-def create_theme(theme: ThemeCreate):
-    return {"message": "Endpoint listo. Lógica pendiente en ramas."}
+async def create_theme(theme: ThemeCreate):
+    return await theme_service.create_theme(theme)
 
 @router.get("/", response_model=List[ThemeOut])
-def get_all_themes():
-    return [{"message": "Endpoint listo. Lógica pendiente en ramas."}]
+async def get_all_themes():
+    return await theme_service.get_all_themes()
 
 @router.put("/{theme_id}", response_model=ThemeOut)
-def update_theme(theme_id: int, theme: ThemeUpdate):
-    return {"message": "Endpoint de edición listo. Lógica pendiente."}
+async def update_theme(theme_id: int, theme: ThemeUpdate):
+    updated_theme = await theme_service.update_theme(theme_id, theme)
+    if not updated_theme:
+        raise HTTPException(status_code=404, detail="Tema no encontrado")
+    return updated_theme
 
 @router.delete("/{theme_id}")
-def delete_theme(theme_id: int):
-    return {"message": f"Tema {theme_id} eliminado. Lógica pendiente."}
+async def delete_theme(theme_id: int):
+    if not await theme_service.delete_theme(theme_id):
+        raise HTTPException(status_code=404, detail="Tema no encontrado")
+    return {"message": "Tema eliminado correctamente."}

@@ -5,7 +5,6 @@ from datetime import datetime
 
 from app.models.counter import get_next_id
 
-
 class Task(Document):
     id: Optional[int] = Field(default=None)
     title: str
@@ -14,16 +13,14 @@ class Task(Document):
     done_date: Optional[datetime] = None
     done: bool = False
     priority: str = "Media"
-    user_id: int # Relación manual con User
+    user_id: int
 
     class Settings:
         name = "tasks"
 
-    # Justo antes de hacer un .insert(), Beanie ejecutará esta función
     @before_event(Insert)
     async def assign_id(self):
         if not self.id:
-            # Llama al contador pidiendo el siguiente número para la colección 'events'
             self.id = await get_next_id("tasks_id")
 
 class TaskCreate(BaseModel):
