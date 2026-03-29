@@ -2,10 +2,7 @@ import time
 import random
 
 def get_next_id_fast() -> int:
-    """
-    Genera un ID numérico único basado en milisegundos.
-    Elimina la necesidad de consultar la base de datos antes de cada insert.
-    """
+    # Genera un ID numérico único basado en milisegundos.
     # Usamos el tiempo actual (epoch) multiplicado para tener un entero largo
     # Sumamos un random pequeño para evitar colisiones si dos peticiones
     # entran exactamente en el mismo microsegundo.

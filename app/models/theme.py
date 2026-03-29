@@ -3,39 +3,45 @@ from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 from app.models.counter import get_next_id_fast
 
-# --- 1. CLASE BASE (Atributos comunes) ---
-# Contiene los datos que comparten la base de datos y la API.
 class ThemeBase(BaseModel):
+    # Define la estructura básica de un tema visual para la app.
+    # Contiene la información mínima que comparten la BD y la API.
+    # Ejemplo: name = "Dark Mode", "Ocean", "Cyberpunk", etc.
     name: str
 
-# --- 2. MODELO DE COLECCIÓN (La Base de Datos en Mongo) ---
-# Hereda de Document (Beanie) y ThemeBase (para tener el 'name').
 class Theme(Document, ThemeBase):
-    id: Optional[int] = Field(default=None)
+    # Este es el modelo real que interactúa con la base de datos.
+    # Hereda el 'name' de ThemeBase y añade configuraciones de Mongo.
+    # Usamos el alias="_id" para que reemplace la clave primaria de MongoDB por defecto.
+    id: Optional[int] = Field(default=None, alias="_id")
 
     class Settings:
+        # Los documentos se guardarán en la colección "themes"
         name = "themes"
 
+    # Este gancho se dispara justo antes de insertar el documento en Mongo
     @before_event(Insert)
     def assign_id(self):
+        # Genera y asigna el identificador numérico único antes de guardarlo por primera vez.
         if self.id is None:
             self.id = get_next_id_fast()
 
-# --- 3. MODELO DE CREACIÓN (POST) ---
-# Como al crear un tema solo necesitamos el nombre, hereda directamente
-# de ThemeBase y no hace falta añadirle nada más.
 class ThemeCreate(ThemeBase):
+    # Esquema que recibe FastAPI cuando haces un POST.
+    # Hereda de ThemeBase, así que solo exige el 'name'.
     pass
 
-# --- 4. MODELO DE ACTUALIZACIÓN (PUT) ---
-# Este va por libre (hereda de BaseModel) porque para actualizar
-# necesitamos que el nombre sea opcional (por si en el futuro añades más campos y solo quieres actualizar uno).
 class ThemeUpdate(BaseModel):
+    # Esquema para actualizar el tema (PATCH/PUT).
+    # Va por libre (hereda de BaseModel) para que 'name' sea opcional.
+    # Esto es útil por si en el futuro añades cosas como "font_family"
+    # y quieres poder actualizar solo una cosa a la vez.
     name: Optional[str] = None
 
-# --- 5. MODELO DE SALIDA (Respuesta GET de la API) ---
-# Hereda el 'name' de ThemeBase y le añade el ID para devolverlo al Frontend.
 class ThemeOut(ThemeBase):
-    id: int
+    # Esquema de respuesta de la API hacia el frontend/cliente.
+    # Hereda el 'name' de la base y le incrusta el ID generado.
+    id: int # El frontend necesita este ID para saber qué tema aplicar
 
+    # Le dice a Pydantic cómo transformar el objeto de Beanie a un JSON limpio
     model_config = ConfigDict(from_attributes=True)
