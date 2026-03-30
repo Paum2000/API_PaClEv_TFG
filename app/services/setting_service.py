@@ -1,5 +1,7 @@
-from app.models.setting import Setting, SettingCreate, SettingUpdate
+from app.models.setting import Setting
 from typing import Optional
+from app.schemas.setting import SettingCreate, SettingUpdate
+
 
 async def create_setting(setting_in: SettingCreate) -> Setting:
     setting = Setting(**setting_in.model_dump())

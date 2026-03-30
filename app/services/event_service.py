@@ -1,5 +1,7 @@
-from app.models.event import Event, EventCreate, EventUpdate
+from app.models.event import Event
 from typing import List, Optional
+from app.schemas.event import EventCreate, EventUpdate
+
 
 async def create_event(event_in: EventCreate) -> Event:
     event = Event(**event_in.model_dump())

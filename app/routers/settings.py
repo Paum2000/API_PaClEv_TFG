@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from app.models.setting import SettingCreate, SettingOut, SettingUpdate
+from app.schemas.setting import SettingCreate, SettingOut, SettingUpdate
 from app.services import setting_service
 
 # Todas las rutas de este archivo responderán bajo el prefijo "/settings"

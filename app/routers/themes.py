@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from typing import List
-from app.models.theme import ThemeCreate, ThemeOut, ThemeUpdate
+from app.schemas.theme import ThemeCreate, ThemeOut, ThemeUpdate
 from app.services import theme_service
 
 # Todas las rutas tendrán el prefijo "/themes" (ej: http://localhost:8000/themes/)

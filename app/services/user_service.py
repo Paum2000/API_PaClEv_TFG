@@ -1,5 +1,7 @@
-from app.models.user import User, UserCreate, UserUpdate
+from app.models.user import User
 from typing import Optional
+from app.schemas.user import UserCreate, UserUpdate
+
 
 async def create_user(user_in: UserCreate) -> User:
     # 1. Preparamos los datos (el ID se generará solo en el modelo)
@@ -36,3 +38,10 @@ async def delete_user(user_id: int) -> bool:
         await user.delete()
         return True
     return False
+
+async def update_user_photo(user_id: int, photo_url: str):
+    user = await get_user(user_id)
+    if user:
+        user.user_photo = photo_url
+        await user.save()
+    return user

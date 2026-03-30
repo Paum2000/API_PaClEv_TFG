@@ -1,5 +1,7 @@
-from app.models.theme import Theme, ThemeCreate, ThemeUpdate
+from app.models.theme import Theme
 from typing import List, Optional
+from app.schemas.theme import ThemeCreate, ThemeUpdate
+
 
 async def create_theme(theme_in: ThemeCreate) -> Theme:
     theme = Theme(**theme_in.model_dump())

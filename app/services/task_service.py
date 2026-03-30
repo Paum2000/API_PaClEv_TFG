@@ -1,5 +1,7 @@
-from app.models.task import Task, TaskCreate, TaskUpdate
+from app.models.task import Task
 from typing import List, Optional
+from app.schemas.task import TaskCreate, TaskUpdate
+
 
 async def create_task(task_in: TaskCreate) -> Task:
     task = Task(**task_in.model_dump())

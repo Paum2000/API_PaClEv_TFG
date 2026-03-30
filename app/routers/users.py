@@ -1,7 +1,7 @@
 import os
 import shutil
 from fastapi import APIRouter, HTTPException, UploadFile, File
-from app.models.user import UserCreate, UserOut, UserUpdate
+from app.schemas.user import UserCreate, UserOut, UserUpdate
 from app.services import user_service
 
 # Todas las rutas tendrán el prefijo "/users" (ej: http://localhost:8000/themes/)

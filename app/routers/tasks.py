@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from typing import List
-from app.models.task import TaskCreate, TaskOut, TaskUpdate
+from app.schemas.task import TaskCreate, TaskOut, TaskUpdate
 from app.services import task_service
 
 # Todas las rutas de este archivo tendrán el prefijo "/tasks"

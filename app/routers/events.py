@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from typing import List
-from app.models.event import EventCreate, EventOut, EventUpdate
+from app.schemas.event import EventCreate, EventOut, EventUpdate
 from app.services import event_service
 
 # prefix="/events": Todas las rutas aquí empezarán con /events automáticamente.
@@ -21,7 +21,7 @@ async def create_event(event: EventCreate):
 async def get_user_events(user_id: int):
     # Busca todas las tareas asociadas a un user_id específico.
     # Gracias al índice 'Indexed(int)' que pusimos en el modelo, esta
-    # búsqueda será rapidísima en MongoDB.
+    # búsqueda será más rapida en MongoDB.
     return await event_service.get_user_events(user_id)
 
 # Recibe el ID por la URL y los datos a actualizar por el body (EventUpdate).
