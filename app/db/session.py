@@ -22,7 +22,7 @@ async def init_db():
     # Función asíncrona que se ejecuta al arrancar FastAPI para establecer
     # el "pool" de conexiones con MongoDB y registrar los modelos de Beanie.
     # Toma la URL de las variables de entorno. Si no la encuentra, usa localhost por defecto.
-    mongo_url = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
+    mongo_url = os.getenv("MONGO_URL", "mongodb://mongodb:27017")
 
     # En lugar de abrir y cerrar una conexión por cada usuario, Mongo mantiene
     # un grupo de conexiones abiertas listas para usarse.
