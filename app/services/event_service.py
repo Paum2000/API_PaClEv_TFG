@@ -12,6 +12,10 @@ async def get_user_events(user_id: int) -> List[Event]:
     # Trae todos los eventos que coincidan con el ID del usuario
     return await Event.find(Event.user_id == user_id).to_list()
 
+async def get_event(event_id: int) -> Optional[Event]:
+    # Busca y devuelve un único evento por su ID
+    return await Event.get(event_id)
+
 async def update_event(event_id: int, event_in: EventUpdate) -> Optional[Event]:
     event = await Event.get(event_id)
     if not event:

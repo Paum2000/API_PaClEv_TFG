@@ -12,7 +12,7 @@ services:
       # Guardamos los datos físicamente para que no se borren al apagar
       - mongo_data:/data/db
 
-  # 2. Tu API FastAPI
+  # 2. La API FastAPI
   api:
     build:
       context: .
@@ -21,10 +21,8 @@ services:
     ports:
       # Exponemos el puerto 8000 para conectarnos por este
       - "8000:8000"
-    environment:
-      # Conectamos la API a la BD de este entorno
-      - MONGODB_URL=mongodb://mongodb:27017
-      - DATABASE_NAME=agenda_db
+    env_file:
+      - .env
     depends_on:
       - mongodb
     volumes:

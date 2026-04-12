@@ -1,8 +1,10 @@
 import os
 import shutil
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, HTTPException, UploadFile, File, Depends
 from app.schemas.user import UserCreate, UserOut, UserUpdate
 from app.services import user_service
+from app.core.security import get_current_user
+from app.models.user import User
 
 # Todas las rutas tendrán el prefijo "/users" (ej: http://localhost:8000/themes/)
 # y aparecerán agrupadas bajo la etiqueta "Users" en Swagger.
@@ -16,45 +18,41 @@ async def create_user(user: UserCreate):
     return await user_service.create_user(user)
 
 @router.get("/{user_id}", response_model=UserOut)
-async def get_user(user_id: int):
-    # Busca un usuario por su ID numérico.
-    # El 'response_model=UserOut' es tu escudo aquí: asegura que el
-    # 'password_hash' jamás se envíe al cliente, solo datos públicos.
-    # Fíjate en el 'await', clave en operaciones asíncronas con MongoDB
-    db_user = await user_service.get_user(user_id)
-    if not db_user:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    return db_user
+async def get_user(current_user: User = Depends(get_current_user)):
+    # El candado ya busca al usuario en la base de datos por ti.
+    # Así que simplemente devolvemos el usuario actual
+    return current_user
 
 @router.put("/{user_id}", response_model=UserOut)
-async def update_user(user_id: int, user: UserUpdate):
+async def update_user(
+        user: UserUpdate,
+        current_user: User = Depends(get_current_user)
+):
     # Actualiza datos básicos del usuario (nombre, email, etc.).
-    updated_user = await user_service.update_user(user_id, user)
+    updated_user = await user_service.update_user(current_user.id, user)
     if not updated_user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     return updated_user
 
 @router.delete("/{user_id}")
-async def delete_user(user_id: int):
+async def delete_user(
+        current_user: User = Depends(get_current_user)
+):
     # Elimina permanentemente al usuario del sistema.
-    if not await user_service.delete_user(user_id):
+    if not await user_service.delete_user(current_user.id):
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     return {"message": "Usuario eliminado correctamente."}
 
 # Esta ruta no recibe JSON, recibe un archivo binario a través de un formulario.
 @router.post("/{user_id}/photo", response_model=UserOut)
-async def upload_user_photo(user_id: int, file: UploadFile = File(...)):
-    # Endpoint dedicado exclusivamente a subir y guardar la foto de perfil.
-    # Comprobamos si el usuario existe antes de guardar nada.
-    # Así evitamos llenar el disco duro de archivos inutiles.
-    user = await user_service.get_user(user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
-
+async def upload_user_photo(
+        file: UploadFile = File(...),
+        current_user: User = Depends(get_current_user)
+):
     # Generamos la ruta donde se va a guardar la imagen físicamente.
     # Al ponerle "user_{user_id}_" al inicio, evitamos que si dos usuarios
     # suben una foto llamada "foto.jpg", se sobrescriban entre sí.
-    file_name = f"user_{user_id}_{file.filename}"
+    file_name = f"user_{current_user.id}_{file.filename}"
 
     # os.path.join arma la ruta correctamente dependiendo del sistema operativo
     # Ej: app/static/uploads/user_1_mifoto.jpg
@@ -72,7 +70,7 @@ async def upload_user_photo(user_id: int, file: UploadFile = File(...)):
     photo_url = f"/static/uploads/{file_name}"
 
     # Llamamos a una función específica del servicio para actualizar solo este campo.
-    updated_user = await user_service.update_user_photo(user_id, photo_url)
+    updated_user = await user_service.update_user_photo(current_user.id, photo_url)
 
     # Devolvemos el usuario actualizado para que el frontend pueda pintar la nueva foto.
     return updated_user

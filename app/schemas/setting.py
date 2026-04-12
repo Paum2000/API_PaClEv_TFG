@@ -5,7 +5,7 @@ class SettingBase(BaseModel):
     # Define las propiedades estéticas y de localización básicas.
     # Son opcionales o tienen valores por defecto, por lo que el usuario
     # no está obligado a enviarlas al registrarse.
-    user_id: int
+    user_id: Optional[int] = None
     theme_id: int
     # Color hexadecimal para detalles de la UI (ej: "#FF5733")
     accent_color: Optional[str] = None

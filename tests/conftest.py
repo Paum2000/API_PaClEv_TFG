@@ -1,5 +1,6 @@
 import pytest
 import pymongo
+import os
 from fastapi.testclient import TestClient
 from app.main import app
 
@@ -25,3 +26,49 @@ def clear_database():
 
     # Cerramos la conexión para no dejar nada colgado.
     sync_client.close()
+
+@pytest.fixture
+def normal_user_token_headers(client):
+    # Crea un usuario normal, inicia sesión y devuelve la cabecera HTTP con el Token.
+    # 1. Registramos al usuario de prueba a través de tu API
+    client.post("/users/", json={
+        "user_name": "Usuario Test",
+        "email": "normal@test.com",
+        "password": "password123"
+    })
+
+    # 2. Iniciamos sesión (Fíjate que OAuth2 usa 'data', no 'json')
+    response = client.post("/auth/login", data={
+        "username": "normal@test.com",
+        "password": "password123"
+    })
+
+    # 3. Extraemos el token y montamos la cabecera exacta que espera FastAPI
+    token = response.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def admin_token_headers(client):
+    # Crea un usuario, lo convierte en Admin "por debajo de la mesa" y devuelve su Token.
+    # 1. Registramos al usuario por la API
+    client.post("/users/", json={
+        "user_name": "Admin Test",
+        "email": "admin@test.com",
+        "password": "adminpassword"
+    })
+
+    # 2. Truco de Hacker: Le damos superpoderes directamente en MongoDB
+    sync_client = pymongo.MongoClient("mongodb://mongo_test:27017")
+    db = sync_client["agenda_testing_db"]
+    db.users.update_one({"email": "admin@test.com"}, {"$set": {"is_admin": True}})
+    sync_client.close()
+
+    # 3. Iniciamos sesión
+    response = client.post("/auth/login", data={
+        "username": "admin@test.com",
+        "password": "adminpassword"
+    })
+
+    token = response.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}

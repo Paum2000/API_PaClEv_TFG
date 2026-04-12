@@ -22,9 +22,7 @@ class TaskBase(BaseModel):
     priority: str = "Media"
 
 class TaskCreate(TaskBase):
-    # Lo que la API exige cuando el usuario envía el formulario de "Nueva Tarea".
-    # Hereda todo lo anterior y hace obligatorio asociar la tarea a un usuario.
-    user_id: int
+    user_id: Optional[int] = None
 
 class TaskOut(TaskBase):
     # Lo que FastAPI devuelve al cliente.

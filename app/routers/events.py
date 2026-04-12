@@ -1,7 +1,9 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from typing import List
-from app.schemas.event import EventCreate, EventOut, EventUpdate
+from app.schemas.event import EventCreate, EventOut, EventUpdate, EventBase
 from app.services import event_service
+from app.core.security import get_current_user
+from app.models.user import User
 
 # prefix="/events": Todas las rutas aquí empezarán con /events automáticamente.
 # tags=["Events"]: Agrupa estos endpoints bajo la sección "Events" en la
@@ -11,39 +13,66 @@ router = APIRouter(prefix="/events", tags=["Events"])
 # response_model=EventOut: Le dice a FastAPI que filtre la respuesta usando
 # el esquema EventOut (asegurando que devuelva el ID y omita datos sensibles si los hubiera).
 @router.post("/", response_model=EventOut)
-async def create_event(event: EventCreate):
-    # Recibe los datos validados por EventCreate y se los pasa al servicio
-    # para que los guarde en la base de datos.
-    return await event_service.create_event(event)
+async def create_event(
+        event_in: EventBase,
+        current_user: User = Depends(get_current_user)
+):
+    # Convertimos los datos que envía el usuario a un diccionario
+    event_data = event_in.model_dump()
+
+    # Le inyectamos automáticamente el ID del dueño del token
+    event_data["user_id"] = current_user.id
+
+    # Creamos el esquema EventCreate que espera el servicio
+    event_to_create = EventCreate(**event_data)
+
+    return await event_service.create_event(event_to_create)
 
 # response_model=List[EventOut]: Indica que devolveremos una LISTA de eventos.
-@router.get("/user/{user_id}", response_model=List[EventOut])
-async def get_user_events(user_id: int):
-    # Busca todas las tareas asociadas a un user_id específico.
-    # Gracias al índice 'Indexed(int)' que pusimos en el modelo, esta
-    # búsqueda será más rapida en MongoDB.
-    return await event_service.get_user_events(user_id)
+@router.get("/my_events", response_model=List[EventOut])
+async def get_user_events(
+        current_user: User = Depends(get_current_user)
+):
+    # Buscamos los eventos usando directamente el ID del token
+    return await event_service.get_user_events(current_user.id)
 
 # Recibe el ID por la URL y los datos a actualizar por el body (EventUpdate).
 @router.put("/{event_id}", response_model=EventOut)
-async def update_event(event_id: int, event: EventUpdate):
-    # Intenta actualizar el evento. Si el servicio devuelve None (porque
-    # el ID no existe en la base de datos), lanzamos un error 404 limpio.
-    updated_event = await event_service.update_event(event_id, event)
+async def update_event(
+        event_id: int,
+        event: EventUpdate,
+        current_user: User = Depends(get_current_user)
+):
+    # 1. Buscamos el evento ORIGINAL en la base de datos
+    original_event = await event_service.get_event(event_id)
 
-    # Manejo de errores: Si no se encontró el evento, cortamos la ejecución
-    # y le avisamos al cliente con un código HTTP 404 (Not Found).
-    if not updated_event:
+    # Si no existe, no seguimos
+    if not original_event:
         raise HTTPException(status_code=404, detail="Evento no encontrado")
+
+    # 2. Comprobamos si el dueño real en la BD es el que hace la petición
+    if original_event.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="No tienes permiso para editar este evento")
+
+    # 3. Si es suyo, entonces SÍ llamamos a tu método para que lo actualice
+    updated_event = await event_service.update_event(event_id, event)
 
     return updated_event
 
 @router.delete("/{event_id}")
-async def delete_event(event_id: int):
-    # Intenta borrar el evento. Igual que en el PUT, si el servicio indica
-    # que no se pudo borrar (ej: no existía), lanzamos un 404.
-    if not await event_service.delete_event(event_id):
+async def delete_event(
+        event_id: int,
+        current_user: User = Depends(get_current_user)
+):
+    # 1. Buscamos el evento primero
+    event = await event_service.get_event(event_id)
+    if not event:
         raise HTTPException(status_code=404, detail="Evento no encontrado")
 
-    # Si todo sale bien, devolvemos un mensaje de éxito.
+    # 2. Comprobamos si el dueño es el que está haciendo la petición
+    if event.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="No tienes permiso para borrar este evento")
+
+    # 3. Si llegamos aquí, es seguro borrarlo
+    await event_service.delete_event(event_id)
     return {"message": "Evento eliminado correctamente."}

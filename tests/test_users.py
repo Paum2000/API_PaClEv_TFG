@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 
 # --- 1. TESTS DE CREACIÓN (POST) ---
+# PÚBLICO: No necesitan token porque la gente tiene que poder registrarse.
 
 def test_create_user_exito(client: TestClient):
     # Mando todos los datos necesarios para registrar un usuario nuevo.
@@ -21,62 +22,48 @@ def test_create_user_exito(client: TestClient):
     # Compruebo que el email se ha guardado tal cual lo envié.
     assert data["email"] == "juan@example.com"
 
-    # Captura dinámica: busco el ID devuelto, ya sea como 'id' (salida normal) o '_id' (típico de MongoDB).
+    # Nos aseguramos de que MongoDB le asignó un ID
     user_id = data.get("id") or data.get("_id")
     assert user_id is not None
 
 def test_create_user_falta_campo_obligatorio(client: TestClient):
-    # Intento crear un usuario a medias (seguro falta el email, que es obligatorio).
+    # Intento crear un usuario a medias (falta el email, que es obligatorio).
     response = client.post(
         "/users/",
         json={"user_name": "Incompleto", "password": "123"}
     )
-    # La API debe rechazarlo y quejarse con un error 422 (Unprocessable Entity) por faltar datos.
+    # La API debe rechazarlo (422 Unprocessable Entity).
     assert response.status_code == 422
 
 
 # --- 2. TESTS DE LECTURA (GET) ---
+# PRIVADOS: Usamos nuestro token y la ruta /me
 
-def test_get_user_exito(client: TestClient):
-    # Primero creo un usuario de prueba para tener alguien a quien buscar.
-    response_create = client.post(
-        "/users/",
-        json={"user_name": "Ana", "email": "ana@test.com", "password": "123"}
-    )
-    data = response_create.json()
-    user_id = data.get("id") or data.get("_id")
+def test_get_user_me_exito(client: TestClient, normal_user_token_headers):
+    # Le pido a la API que me devuelva "MI" perfil.
+    # Como el token lo genera nuestro conftest.py, sabemos que el usuario se llama "normal@test.com"
+    response_get = client.get("/users/me", headers=normal_user_token_headers)
 
-    # Le pido a la API que me devuelva los datos de ese usuario en concreto usando su ID.
-    response_get = client.get(f"/users/{user_id}")
-
-    # Confirmo que lo encuentra (200) y que los datos coinciden con Ana.
+    # Confirmo que entra (200) y que soy yo.
     assert response_get.status_code == 200
-    assert response_get.json()["email"] == "ana@test.com"
+    assert response_get.json()["email"] == "normal@test.com"
 
-def test_get_user_no_existe(client: TestClient):
-    # Me invento un ID que sé perfectamente que no existe en mi base de datos.
-    id_falso = 9999999999999
-    response = client.get(f"/users/{id_falso}")
+def test_get_user_me_sin_token(client: TestClient):
+    # Intento acceder a la ruta privada SIN mandarle la cabecera del token.
+    response = client.get("/users/me")
 
-    # La API debería soltar un 404 (Not Found) porque no hay nadie registrado con ese ID.
-    assert response.status_code == 404
+    # La API debe bloquearme en la puerta con un 401 (Unauthorized).
+    assert response.status_code == 401
 
 
 # --- 3. TESTS DE ACTUALIZACIÓN (PUT) ---
 
-def test_update_user_exito(client: TestClient):
-    # Creo el usuario original (Carlos) y me guardo su ID.
-    response_create = client.post(
-        "/users/",
-        json={"user_name": "Carlos", "email": "carlos@test.com", "password": "123"}
-    )
-    data = response_create.json()
-    user_id = data.get("id") or data.get("_id")
-
-    # Le mando una actualización cambiando solo el nombre.
+def test_update_user_me_exito(client: TestClient, normal_user_token_headers):
+    # Le mando una actualización cambiando solo el nombre de MI perfil.
     response_update = client.put(
-        f"/users/{user_id}",
-        json={"user_name": "Carlos Modificado"}
+        "/users/me",
+        json={"user_name": "Carlos Modificado"},
+        headers=normal_user_token_headers
     )
 
     # Verifico que acepta el cambio (200) y que en la respuesta el nombre ya sale actualizado.
@@ -86,23 +73,9 @@ def test_update_user_exito(client: TestClient):
 
 # --- 4. TESTS DE ELIMINACIÓN (DELETE) ---
 
-def test_delete_user_exito(client: TestClient):
-    # Creo un usuario que solo va a existir para ser borrado.
-    response_create = client.post(
-        "/users/",
-        json={"user_name": "Borrable", "email": "borrar@test.com", "password": "123", "birthday": "1995-05-15T00:00:00"}
-    )
-    data = response_create.json()
-
-    # ESTO NOS DIRÁ LA VERDAD EN LA CONSOLA:
-    # Pongo un print estratégico para debugear y ver qué trae exactamente el JSON si ejecuto con 'pytest -s'.
-    print(f"\n DEBUG DATA: {data}")
-
-    # Intento capturar el ID de todas las formas posibles (por si algo fallaba antes).
-    user_id = data.get("id") or data.get("_id") or data.get("user_id")
-
-    # Le meto el hachazo al usuario con el método DELETE.
-    response_delete = client.delete(f"/users/{user_id}")
+def test_delete_user_me_exito(client: TestClient, normal_user_token_headers):
+    # Le meto el hachazo a "mi propia cuenta" con el método DELETE usando el token.
+    response_delete = client.delete("/users/me", headers=normal_user_token_headers)
 
     # Confirmo que se borró sin problemas.
     assert response_delete.status_code == 200
@@ -110,21 +83,17 @@ def test_delete_user_exito(client: TestClient):
 
 # --- 5. TEST DE SUBIDA DE ARCHIVOS ---
 
-def test_upload_user_photo(client: TestClient):
-    # Creo un usuario base al que le voy a asignar una foto de perfil.
-    response_create = client.post(
-        "/users/",
-        json={"user_name": "Fotografo", "email": "foto@test.com", "password": "123"}
-    )
-    data = response_create.json()
-    user_id = data.get("id") or data.get("_id")
-
-    # Simulo un archivo de imagen en la RAM. Le pongo nombre, unos bytes falsos ("fake_data") y aviso que es un jpeg.
+def test_upload_user_photo_me(client: TestClient, normal_user_token_headers):
+    # Simulo un archivo de imagen en la RAM.
     archivos = {"file": ("mi_cara.jpg", b"fake_data", "image/jpeg")}
 
-    # IMPORTANTE: Uso 'files=' en lugar de 'json=' para mandar la imagen en formato multipart/form-data.
-    response_upload = client.post(f"/users/{user_id}/photo", files=archivos)
+    # Subo la foto a mi perfil. Ojo: uso 'files=' y le paso los headers.
+    response_upload = client.post(
+        "/users/me/photo",
+        files=archivos,
+        headers=normal_user_token_headers
+    )
 
-    # Me aseguro de que el servidor tragó bien la imagen (200) y me devolvió la clave de confirmación en el JSON.
+    # Me aseguro de que el servidor tragó bien la imagen (200) y guardó la URL.
     assert response_upload.status_code == 200
     assert "user_photo" in response_upload.json()

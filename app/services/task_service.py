@@ -8,6 +8,10 @@ async def create_task(task_in: TaskCreate) -> Task:
     await task.insert()
     return task
 
+async def get_task(task_id: int) -> Optional[Task]:
+    # Busca y devuelve una única tarea por su ID
+    return await Task.get(task_id)
+
 async def get_user_tasks(user_id: int) -> List[Task]:
     # Busca todas las tareas que pertenezcan a este usuario y las devuelve en una lista
     return await Task.find(Task.user_id == user_id).to_list()
