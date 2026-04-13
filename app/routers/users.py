@@ -17,13 +17,13 @@ async def create_user(user: UserCreate):
     # y lo envía al servicio. Allí es donde se tendrá que encriptar antes de guardar.
     return await user_service.create_user(user)
 
-@router.get("/{user_id}", response_model=UserOut)
+@router.get("/me", response_model=UserOut)
 async def get_user(current_user: User = Depends(get_current_user)):
     # El candado ya busca al usuario en la base de datos por ti.
     # Así que simplemente devolvemos el usuario actual
     return current_user
 
-@router.put("/{user_id}", response_model=UserOut)
+@router.put("/me", response_model=UserOut)
 async def update_user(
         user: UserUpdate,
         current_user: User = Depends(get_current_user)
@@ -34,7 +34,7 @@ async def update_user(
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     return updated_user
 
-@router.delete("/{user_id}")
+@router.delete("/me")
 async def delete_user(
         current_user: User = Depends(get_current_user)
 ):
@@ -44,7 +44,7 @@ async def delete_user(
     return {"message": "Usuario eliminado correctamente."}
 
 # Esta ruta no recibe JSON, recibe un archivo binario a través de un formulario.
-@router.post("/{user_id}/photo", response_model=UserOut)
+@router.post("/me/photo", response_model=UserOut)
 async def upload_user_photo(
         file: UploadFile = File(...),
         current_user: User = Depends(get_current_user)
