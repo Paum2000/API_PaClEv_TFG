@@ -18,8 +18,13 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     # OAuth2 estandariza que el campo se llame 'username',
     # pero nosotros ahí pediremos al usuario que meta su 'email'.
 
-    # 1. Buscamos al usuario en la base de datos por su email
-    user = await User.find_one(User.email == form_data.username)
+    # 1. ¿Es un email o un nickname? Comprobamos si tiene un "@"
+    if "@" in form_data.username:
+        # Buscamos al usuario por su email
+        user = await User.find_one(User.email == form_data.username)
+    else:
+        # Buscamos al usuario por su nickname
+        user = await User.find_one(User.nickname == form_data.username)
 
     # 2. Si no existe, o si la contraseña no coincide con el hash no entra
     if not user or not verify_password(form_data.password, user.password_hash):

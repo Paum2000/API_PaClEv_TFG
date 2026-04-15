@@ -15,6 +15,7 @@ from app.routers import users, tasks, events, themes, settings, auth
 ADMIN_USER_NAME = os.getenv("FIRST_ADMIN_NAME", "admin")
 ADMIN_EMAIL = os.getenv("FIRST_ADMIN_EMAIL", "admin@miproyecto.com")
 ADMIN_PASSWORD = os.getenv("FIRST_ADMIN_PASSWORD", "admin1234")
+ADMIN_NICKNAME = os.getenv("FIRST_ADMIN_NICKNAME","_admin_")
 
 async def create_first_admin():
 
@@ -24,6 +25,7 @@ async def create_first_admin():
     if not admin_existente:
         nuevo_admin = User(
             user_name=ADMIN_USER_NAME,
+            nickname=ADMIN_NICKNAME,
             email=ADMIN_EMAIL,
             password_hash=get_password_hash(ADMIN_PASSWORD),
             is_admin=True
@@ -60,7 +62,7 @@ def verificar_admin_docs(credentials: HTTPBasicCredentials = Depends(security)):
     # Verifica las credenciales de la ventana emergente del navegador.
     es_usuario_correcto = secrets.compare_digest(
         credentials.username.encode("utf-8"),
-        ADMIN_USER_NAME.encode("utf-8")
+        ADMIN_NICKNAME.encode("utf-8")
     )
     es_password_correcta = secrets.compare_digest(
         credentials.password.encode("utf-8"),
