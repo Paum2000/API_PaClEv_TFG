@@ -10,6 +10,8 @@ class UserBase(BaseModel):
     # la petición (Error 422) si el usuario envía "hola123" en lugar de "hola@email.com".
     email: EmailStr
 
+    nickname: str
+
     birthday: Optional[datetime] = None
     user_photo: Optional[str] = None
 
@@ -31,6 +33,7 @@ class UserUpdate(BaseModel):
     # Esquema para cuando el usuario edita su perfil.
     # Todo es opcional.
     user_name: Optional[str] = None
+    nickname: Optional[str] = None
     email: Optional[EmailStr] = None
     password: Optional[str] = None
     birthday: Optional[datetime] = None

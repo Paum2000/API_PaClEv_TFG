@@ -1,5 +1,7 @@
 import os
 import shutil
+from typing import List
+
 from fastapi import APIRouter, HTTPException, UploadFile, File, Depends
 from app.schemas.user import UserCreate, UserOut, UserUpdate
 from app.services import user_service
@@ -74,3 +76,9 @@ async def upload_user_photo(
 
     # Devolvemos el usuario actualizado para que el frontend pueda pintar la nueva foto.
     return updated_user
+
+@router.get("/", response_model=List[UserOut])
+async def get_all_users(current_user: User = Depends(get_current_user)):
+    # Obtiene el listado completo de usuarios de la aplicación.
+
+    return await user_service.get_all_users()

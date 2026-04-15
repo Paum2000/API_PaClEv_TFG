@@ -1,5 +1,5 @@
 from app.models.user import User
-from typing import Optional
+from typing import Optional, List
 from app.schemas.user import UserCreate, UserUpdate
 from app.core.security import get_password_hash
 
@@ -9,6 +9,11 @@ async def create_user(user_in: UserCreate) -> User:
     usuario_existente = await User.find_one(User.email == user_in.email)
     if usuario_existente:
         raise ValueError("Este email ya está registrado.")
+
+    # 2. Comprobamos si el nickname ya existe
+    user_exists_nickname = await User.find_one(User.nickname == user_in.nickname)
+    if user_exists_nickname:
+        raise ValueError("Este nickname ya está registrado.")
 
     # 2. Convertimos la contraseña plana a un hash
     hashed_pass = get_password_hash(user_in.password)
@@ -58,3 +63,7 @@ async def update_user_photo(user_id: int, photo_url: str):
         user.user_photo = photo_url
         await user.save()
     return user
+
+async def get_all_users() -> List[User]:
+    # Busca y devuelve una lista con absolutamente todos los usuarios
+    return await User.find_all().to_list()

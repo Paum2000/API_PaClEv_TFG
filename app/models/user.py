@@ -9,6 +9,7 @@ class User(Document, UserBase):
 
     # Beanie necesita saber que el email es único e indexado
     email: Indexed(EmailStr, unique=True)
+    nickname: Indexed(str, unique=True)
 
     # Campos exclusivo de la BD
     password_hash: str
