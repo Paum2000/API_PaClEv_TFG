@@ -15,7 +15,7 @@ from app.routers import users, tasks, events, themes, settings, auth
 ADMIN_USER_NAME = os.getenv("FIRST_ADMIN_NAME", "admin")
 ADMIN_EMAIL = os.getenv("FIRST_ADMIN_EMAIL", "admin@miproyecto.com")
 ADMIN_PASSWORD = os.getenv("FIRST_ADMIN_PASSWORD", "admin1234")
-ADMIN_NICKNAME = os.getenv("FIRST_ADMIN_NICKNAME","_admin_")
+ADMIN_NICKNAME = os.getenv("FIRST_ADMIN_NICKNAME","admin")
 
 async def create_first_admin():
 
