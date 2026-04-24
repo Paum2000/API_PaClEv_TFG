@@ -40,3 +40,5 @@ class TaskUpdate(BaseModel):
     start_date: Optional[datetime]=None
     done_date: Optional[datetime]=None
     completed: Optional[bool] = None
+    color: Optional[str] = None
+    priority: Optional[str] = None

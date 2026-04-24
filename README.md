@@ -126,9 +126,9 @@ Para determinar la base de datos más adecuada para el proyecto, se llevaron a c
 ### Resultados
 
 | Métrica | SQL (PostgreSQL) | MongoDB | Ganador |
-|---|---|---|---|
-| **Velocidad de respuesta** | Línea base | ~3× más rápido | MongoDB |
-| **Tasa de fallos** | 7% | 1% | MongoDB |
+|---|------------------|---|---|
+| **Velocidad de respuesta** | Línea base       | ~3× más rápido | MongoDB |
+| **Tasa de fallos** | 7%               | 1% | MongoDB |
 
 ### Conclusiones
 
