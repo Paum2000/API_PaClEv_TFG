@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict, Field
-from datetime import datetime
+from datetime import date, time
 from typing import Optional
 
 class EventBase(BaseModel):
@@ -7,8 +7,10 @@ class EventBase(BaseModel):
     # en la aplicación.
     title: str
     description: Optional[str] = None
-    start_datetime: datetime # Fecha y hora de inicio
-    end_datetime: Optional[datetime] = None   # Fecha y hora de fin
+    start_date: date                       # Qué día empieza
+    start_time: Optional[time] = None      # A qué hora
+    end_date: Optional[date] = None        # Qué día termina
+    end_time: Optional[time] = None        # A qué hora termina
 
     # Banderas lógicas, útiles para el frontend
     is_all_day: bool = False
@@ -39,8 +41,10 @@ class EventUpdate(BaseModel):
     # (ej: cambiar solo el color) sin tener que enviar toda la fecha de nuevo.
     title: Optional[str] = None
     description: Optional[str] = None
-    start_datetime: Optional[datetime] = None
-    end_datetime: Optional[datetime] = None
+    start_date: Optional[date] = None
+    start_time: Optional[time] = None
+    end_date: Optional[date] = None
+    end_time: Optional[time] = None
     is_all_day: Optional[bool] = None
     is_recurring: Optional[bool] = None
     recurrence: Optional[str] = None
