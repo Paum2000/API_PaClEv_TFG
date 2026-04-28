@@ -10,6 +10,7 @@ def test_create_user_exito(client: TestClient):
         json={
             "user_name": "Juan Perez",
             "email": "juan@example.com",
+            "nickname": "un_nickname_cualquiera",
             "password": "mi_password_seguro",
             "birthday": "1995-05-15T00:00:00"
         }

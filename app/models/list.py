@@ -1,16 +1,17 @@
 from beanie import Document, Indexed, before_event, Insert
 from pydantic import Field, ConfigDict
 from typing import Optional
-from app.schemas.setting import SettingBase
+from app.schemas.list import ListBase
 
-class Setting(Document, SettingBase):
+class UserList(Document, ListBase):
+    # Usamos tu sistema de IDs numéricos
     id: Optional[int] = Field(default=None, alias="_id")
 
-    # Mantenemos el índice único para el user_id
-    user_id: Indexed(int, unique=True)
+    # Índice para búsquedas rápidas, pero NO unique, porque un usuario tendrá varias listas
+    user_id: Indexed(int)
 
     class Settings:
-        name = "settings"
+        name = "user_lists"
 
     model_config = ConfigDict(populate_by_name=True, from_attributes=True)
 

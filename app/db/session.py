@@ -9,6 +9,7 @@ from app.models.setting import Setting
 from app.models.task import Task
 from app.models.theme import Theme
 from app.models.user import User
+from app.models.list import UserList
 
 
 # A veces, ciertas versiones de Motor/PyMongo chocan con características
@@ -22,7 +23,7 @@ async def init_db():
     # Función asíncrona que se ejecuta al arrancar FastAPI para establecer
     # el "pool" de conexiones con MongoDB y registrar los modelos de Beanie.
     # Toma la URL de las variables de entorno. Si no la encuentra, usa localhost por defecto.
-    mongo_url = os.getenv("MONGO_URL", "mongodb://mongodb:27017")
+    mongo_url = os.getenv("MONGODB_URL", "mongodb://mongodb:27017")
 
     # En lugar de abrir y cerrar una conexión por cada usuario, Mongo mantiene
     # un grupo de conexiones abiertas listas para usarse.
@@ -47,6 +48,7 @@ async def init_db():
             Event,
             Theme,
             Task,
-            Setting
+            Setting,
+            UserList
         ]
     )

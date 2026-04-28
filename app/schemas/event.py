@@ -1,6 +1,7 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, PlainSerializer
 from datetime import date, time
-from typing import Optional
+from typing import Optional, Annotated
+
 
 class EventBase(BaseModel):
     # Contiene todos los campos comunes que definen cómo es un evento

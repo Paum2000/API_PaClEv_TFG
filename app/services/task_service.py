@@ -1,37 +1,33 @@
-from app.models.task import Task
-from typing import List, Optional
-from app.schemas.task import TaskCreate, TaskUpdate
+from fastapi import APIRouter, Depends, HTTPException
+from typing import List
+from app.schemas.task import TaskCreate, TaskOut, TaskUpdate
+from app.services import task_service
+from app.core.security import get_current_user
+from app.models.user import User
 
+router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
-async def create_task(task_in: TaskCreate) -> Task:
-    task = Task(**task_in.model_dump())
-    await task.insert()
-    return task
+@router.post("/", response_model=TaskOut)
+async def create_task(task_in: TaskCreate, current_user: User = Depends(get_current_user)):
+    task_in.user_id = current_user.id
+    return await task_service.create_task(task_in)
 
-async def get_task(task_id: int) -> Optional[Task]:
-    # Busca y devuelve una única tarea por su ID
-    return await Task.get(task_id)
+@router.get("/my_tasks", response_model=List[TaskOut])
+async def get_my_tasks(current_user: User = Depends(get_current_user)):
+    # ¡AQUÍ ESTABA EL ERROR! Asegúrate de llamar a get_user_tasks
+    return await task_service.get_user_tasks(current_user.id)
 
-async def get_user_tasks(user_id: int) -> List[Task]:
-    # Busca todas las tareas que pertenezcan a este usuario y las devuelve en una lista
-    return await Task.find(Task.user_id == user_id).to_list()
+@router.put("/{task_id}", response_model=TaskOut)
+async def update_task(task_id: int, task_in: TaskUpdate, current_user: User = Depends(get_current_user)):
+    task = await task_service.get_task(task_id)
+    if not task or task.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Tarea no encontrada")
+    return await task_service.update_task(task_id, task_in)
 
-async def update_task(task_id: int, task_in: TaskUpdate) -> Optional[Task]:
-    task = await Task.get(task_id)
-    if not task:
-        return None
-
-    update_data = task_in.model_dump(exclude_unset=True)
-
-    for key, value in update_data.items():
-        setattr(task, key, value)
-
-    await task.save()
-    return task
-
-async def delete_task(task_id: int) -> bool:
-    task = await Task.get(task_id)
-    if task:
-        await task.delete()
-        return True
-    return False
+@router.delete("/{task_id}")
+async def delete_task(task_id: int, current_user: User = Depends(get_current_user)):
+    task = await task_service.get_task(task_id)
+    if not task or task.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Tarea no encontrada")
+    await task_service.delete_task(task_id)
+    return {"message": "Tarea eliminada"}

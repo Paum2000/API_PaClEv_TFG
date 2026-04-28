@@ -12,26 +12,26 @@ router = APIRouter(prefix="/tasks", tags=["Tasks"])
 # response_model=TaskOut: Nos asegura que el frontend recibirá el 'id' generado.
 @router.post("/", response_model=TaskOut)
 async def create_task(
-        task: TaskCreate,
-        current_user: User = Depends(get_current_user)
+        task_in: TaskCreate,
+        user_obj: User = Depends(get_current_user)
 ):
     # Sobrescribimos el user_id para garantizar que la tarea
     # se asigna al usuario dueño del token.
-    task.user_id = current_user.id
+    task_in.user_id = user_obj.id
     # Recibe el esquema TaskCreate (exige title y user_id)
     # y lo envía al servicio para guardarlo en la base de datos.
-    return await task_service.create_task(task)
+    return await task_service.create_task(task_in)
 
 # response_model=List[TaskOut]: Crucial aquí. Le indica a FastAPI que
 # la respuesta será un arreglo (array) de múltiples tareas.
 @router.get("/my_tasks", response_model=List[TaskOut])
 async def get_user_tasks(
-        current_user: User = Depends(get_current_user)
+        user_obj: User = Depends(get_current_user)
 ):
     # Busca todas las tareas asociadas a un usuario en particular.
     # Como pusimos un índice (Indexed) en user_id en el modelo de base de datos,
     # esta consulta ira rapido sin importar cuántos miles de tareas existan.
-    return await task_service.get_user_tasks(current_user.id)
+    return await task_service.get_user_tasks(user_obj.id)
 
 @router.put("/{task_id}", response_model=TaskOut)
 async def update_task(

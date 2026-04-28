@@ -16,3 +16,4 @@ pymongo==4.9.1
 PyJWT
 passlib[bcrypt]
 bcrypt==3.2.2
+sentry-sdk
