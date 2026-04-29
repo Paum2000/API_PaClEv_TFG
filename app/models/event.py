@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from beanie import Document, Indexed, before_event, Insert, Replace, Save
 from pydantic import Field, ConfigDict
 from typing import Optional
@@ -17,13 +15,16 @@ class Event(Document, EventBase):
 
     @before_event([Insert, Replace, Save])
     def serialize_dates(self):
-        if isinstance(self.start_date, datetime.date):
+        if self.start_date and not isinstance(self.start_date, str):
             self.start_date = self.start_date.isoformat()
-        if self.start_time and isinstance(self.start_time, datetime.time):
+
+        if self.start_time and not isinstance(self.start_time, str):
             self.start_time = self.start_time.isoformat()
-        if self.end_date and isinstance(self.end_date, datetime.date):
+
+        if self.end_date and not isinstance(self.end_date, str):
             self.end_date = self.end_date.isoformat()
-        if self.end_time and isinstance(self.end_time, datetime.time):
+
+        if self.end_time and not isinstance(self.end_time, str):
             self.end_time = self.end_time.isoformat()
 
     model_config = ConfigDict(populate_by_name=True, from_attributes=True)

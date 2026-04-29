@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
-from typing import List
+from typing import List, Any
 from app.schemas.task import TaskCreate, TaskOut, TaskUpdate
 from app.services import task_service
 from app.core.security import get_current_user
@@ -12,32 +12,32 @@ router = APIRouter(prefix="/tasks", tags=["Tasks"])
 # response_model=TaskOut: Nos asegura que el frontend recibirá el 'id' generado.
 @router.post("/", response_model=TaskOut)
 async def create_task(
-        task_in: TaskCreate,
-        user_obj: User = Depends(get_current_user)
+        task: TaskCreate,
+        current_user: Any = Depends(get_current_user)
 ):
     # Sobrescribimos el user_id para garantizar que la tarea
     # se asigna al usuario dueño del token.
-    task_in.user_id = user_obj.id
+    task.user_id = current_user.id
     # Recibe el esquema TaskCreate (exige title y user_id)
     # y lo envía al servicio para guardarlo en la base de datos.
-    return await task_service.create_task(task_in)
+    return await task_service.create_task(task)
 
 # response_model=List[TaskOut]: Crucial aquí. Le indica a FastAPI que
 # la respuesta será un arreglo (array) de múltiples tareas.
 @router.get("/my_tasks", response_model=List[TaskOut])
 async def get_user_tasks(
-        user_obj: User = Depends(get_current_user)
+        current_user: Any = Depends(get_current_user)
 ):
     # Busca todas las tareas asociadas a un usuario en particular.
     # Como pusimos un índice (Indexed) en user_id en el modelo de base de datos,
     # esta consulta ira rapido sin importar cuántos miles de tareas existan.
-    return await task_service.get_user_tasks(user_obj.id)
+    return await task_service.get_user_tasks(current_user.id)
 
 @router.put("/{task_id}", response_model=TaskOut)
 async def update_task(
         task_id: int,
         task: TaskUpdate,
-        current_user: User = Depends(get_current_user)
+        current_user: Any = Depends(get_current_user)
 ):
     # 1. Buscamos la tarea original en la base de datos
     tarea_original = await task_service.get_task(task_id)
@@ -56,7 +56,7 @@ async def update_task(
 @router.delete("/{task_id}")
 async def delete_task(
         task_id: int,
-        current_user: User = Depends(get_current_user)
+        current_user: Any = Depends(get_current_user)
 ):
     # 1. Buscamos la tarea original
     tarea_original = await task_service.get_task(task_id)

@@ -71,7 +71,7 @@ def test_delete_event(client: TestClient, normal_user_token_headers):
         "/events/",
         json={
             "title": "Borrar",
-            "start_date": "2026-07-01",        # 👈 Cambiado aquí
+            "start_date": "2026-07-01",
         },
         headers=normal_user_token_headers
     )
