@@ -1,8 +1,11 @@
-# API PaClEv 
+# PaClEvAPI
 
-API robusta y asíncrona desarrollada para el Trabajo de Fin de Grado **PaClEv**. Construida con **FastAPI**, arquitectura de base de datos **NoSQL (MongoDB)** y totalmente contenedorizada con **Docker** para un despliegue ágil y reproducible.
+> API robusta y asíncrona desarrollada para el Trabajo de Fin de Grado **PaClEv**.  
+> Construida con FastAPI, arquitectura NoSQL (MongoDB) y contenedorizada con Docker para un despliegue ágil y reproducible.
 
-> ** Nota sobre las ramas del repositorio:** Este repositorio cuenta con dos ramas principales — `sql` y `mongo` — resultado de un estudio comparativo de rendimiento realizado con **Locust**. Tras las pruebas, **MongoDB fue seleccionado** como base de datos definitiva. Los resultados del benchmark están documentados [más abajo](#-benchmark-de-rendimiento-sql-vs-mongodb).
+---
+
+> **Nota sobre las ramas del repositorio:** Este repositorio cuenta con dos ramas principales — `sql` y `mongo` — resultado de un estudio comparativo de rendimiento realizado con Locust. Tras las pruebas, MongoDB fue seleccionado como base de datos definitiva. Los resultados del benchmark están documentados más abajo.
 
 ---
 
@@ -10,23 +13,27 @@ API robusta y asíncrona desarrollada para el Trabajo de Fin de Grado **PaClEv**
 
 | Módulo | Descripción |
 |---|---|
-| **Usuarios** | Registro, login y subida de fotos de perfil |
-| **Autenticación** | Login con tokens JWT y contraseñas encriptadas con Bcrypt |
-| **Eventos** | CRUD completo de eventos en el calendario |
-| **Tareas** | Gestión de tareas con seguimiento de estado (completado/pendiente) |
-| **Temas** | Gestión de temas visuales para la interfaz *(solo administradores)* |
-| **Ajustes** | Personalización de idioma, colores y tema por usuario |
+| **Usuarios** | Registro, login y gestión de perfil seguro. |
+| **Autenticación** | Login stateless con tokens JWT y contraseñas encriptadas (Bcrypt). |
+| **Horarios** | Gestión de múltiples horarios semanales (ej. Verano/Invierno) con bloques de actividades personalizados por día y hora. |
+| **Eventos** | CRUD de eventos con soporte avanzado para recurrencia y control independiente de fechas y horas. |
+| **Tareas** | Gestión de tareas con seguimiento de estado, niveles de prioridad y personalización de colores. |
+| **Listas** | Creación y gestión de listas personalizadas de ítems aisladas por usuario. |
+| **Temas** | Gestión de temas visuales para la interfaz (solo administradores). |
+| **Ajustes** | Personalización de idioma, colores de acento y temas por usuario. |
 
 ---
 
 ## Stack Tecnológico
 
-- **Framework backend:** [FastAPI](https://fastapi.tiangolo.com/) (Python 3.11+)
-- **Base de datos:** [MongoDB](https://www.mongodb.com/) con motor asíncrono
-- **ODM:** [Beanie](https://beanie-odm.dev/) (Object Document Mapper basado en Pydantic)
-- **Seguridad:** OAuth2 (JWT) + Passlib (Bcrypt)
-- **Despliegue:** Docker & Docker Compose
-- **Testing:** Pytest, HTTPX y Pytest-Asyncio
+| Categoría | Tecnología |
+|---|---|
+| **Framework backend** | FastAPI (Python 3.11+) |
+| **Base de datos** | MongoDB con motor asíncrono (Motor) |
+| **ODM** | Beanie (Object Document Mapper basado en Pydantic, con hooks de serialización personalizados) |
+| **Seguridad** | OAuth2 (JWT) + Passlib (Bcrypt) |
+| **Despliegue** | Docker & Docker Compose (Arquitectura Multicontenedor) |
+| **Testing** | Pytest, HTTPX y Pytest-Asyncio |
 
 ---
 
@@ -41,7 +48,7 @@ app/
 ├── routers/     # Endpoints y gestión de rutas HTTP
 ├── services/    # Lógica de negocio (intermediaria entre routers y base de datos)
 └── core/        # Configuraciones centrales, seguridad y variables de entorno
-tests/           # Batería de pruebas automatizadas
+tests/           # Batería de pruebas automatizadas y aisladas
 ```
 
 ---
@@ -83,34 +90,41 @@ La API estará disponible en: **http://localhost:8000**
 
 ## Endpoints Principales
 
-Todos los endpoints privados requieren el token JWT en la cabecera `Authorization: Bearer <token>`.
+> Todos los endpoints privados requieren el token JWT en la cabecera `Authorization: Bearer <token>`.
 
 ### Autenticación
+
 | Método | Ruta | Descripción |
 |---|---|---|
 | `POST` | `/auth/login` | Inicio de sesión y generación de JWT |
 
 ### Usuarios
+
 | Método | Ruta | Descripción |
 |---|---|---|
 | `POST` | `/users/` | Registro de nuevo usuario |
 | `GET` | `/users/me` | Obtener datos del usuario actual |
 | `PUT` | `/users/me` | Actualizar perfil |
 
-### Eventos y Tareas
+### Productividad (Eventos, Tareas, Listas y Horarios)
+
 | Método | Ruta | Descripción |
 |---|---|---|
 | `GET` | `/events/me` | Lista de eventos del usuario |
 | `GET` | `/tasks/me` | Lista de tareas del usuario |
+| `GET` | `/lists/my_lists` | Lista de agrupaciones de ítems del usuario |
+| `GET` | `/schedules/` | Lista de horarios base del usuario |
+| `GET` | `/schedules/{id}/blocks` | Lista de bloques de un horario específico |
 
 ### Ajustes
+
 | Método | Ruta | Descripción |
 |---|---|---|
-| `GET` | `/settings/me` | Obtener configuración personalizada |
+| `GET` | `/settings/my_settings` | Obtener configuración personalizada |
 
 ---
 
-## Documentación Interactiva 
+## Documentación Interactiva
 
 La API incluye documentación autogenerada con **Swagger UI**, protegida por Basic Auth para prevenir accesos no autorizados.
 
@@ -121,31 +135,33 @@ La API incluye documentación autogenerada con **Swagger UI**, protegida por Bas
 
 ## Benchmark de Rendimiento: SQL vs MongoDB
 
-Para determinar la base de datos más adecuada para el proyecto, se llevaron a cabo pruebas de carga y rendimiento con **[Locust](https://locust.io/)**, simulando tráfico real de usuarios concurrentes sobre ambas implementaciones.
+Para determinar la base de datos más adecuada para el proyecto, se llevaron a cabo pruebas de carga y rendimiento con **Locust**, simulando tráfico real de usuarios concurrentes sobre ambas implementaciones.
 
 ### Resultados
 
 | Métrica | SQL (PostgreSQL) | MongoDB | Ganador |
-|---|------------------|---|---|
-| **Velocidad de respuesta** | Línea base       | ~3× más rápido | MongoDB |
-| **Tasa de fallos** | 7%               | 1% | MongoDB |
+|---|---|---|---|
+| **Velocidad de respuesta** | Línea base | ~3× más rápido | ✅ MongoDB |
+| **Tasa de fallos** | 7% | 1% | ✅ MongoDB |
 
 ### Conclusiones
 
 MongoDB demostró una ventaja clara en ambas métricas críticas: triplicó la velocidad de respuesta bajo carga y redujo la tasa de errores del 7% al 1%. Estos resultados justifican la elección de MongoDB como base de datos definitiva del proyecto.
 
-La implementación SQL se conserva en la rama `sql` del repositorio para consulta y comparación.
+> La implementación SQL se conserva en la rama `sql` del repositorio para consulta y comparación.
 
 ---
 
 ## Testing y Calidad del Código
 
-Se ha implementado una estrategia de pruebas exhaustiva con **pytest**, superando una batería de **23 tests automatizados** que validan:
+Se ha implementado una estrategia de pruebas exhaustiva con **pytest**, superando una batería de **33 tests automatizados** que validan:
 
-- Flujo completo de registro y autenticación (Happy Path & Sad Path)
-- Operaciones CRUD seguras en Tareas y Eventos
-- Protección contra accesos no autorizados (Error 401 y 403)
-- Validación estricta de esquemas Pydantic (Error 422)
+- Flujo completo de registro y autenticación (Happy Path & Sad Path).
+- Operaciones CRUD seguras y aisladas en Tareas, Eventos, Listas y Horarios.
+- Borrado en cascada: Garantía de integridad de datos al eliminar entidades padre (ej. Horarios y sus bloques).
+- Protección contra accesos no autorizados (Error 401 y 403).
+- Validación estricta de esquemas Pydantic (Error 422).
+- Ejecución determinista: Entornos de prueba aislados con limpieza de volúmenes en Docker para evitar falsos negativos.
 
 ### Ejecutar los tests
 
@@ -153,7 +169,7 @@ Se ha implementado una estrategia de pruebas exhaustiva con **pytest**, superand
 docker-compose -f docker-compose.test.yml up --build --abort-on-container-exit
 ```
 
-Al finalizar, se genera automáticamente un **reporte de cobertura** en formato HTML navegable disponible en `htmlcov/index.html`.
+Al finalizar, se genera automáticamente un reporte de cobertura en formato HTML navegable disponible en `htmlcov/index.html`.
 
 ---
 

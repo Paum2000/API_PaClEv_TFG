@@ -10,6 +10,7 @@ from app.models.task import Task
 from app.models.theme import Theme
 from app.models.user import User
 from app.models.list import UserList
+from app.models.schedule import WeekSchedule, BlockWeekSchedule
 
 
 # A veces, ciertas versiones de Motor/PyMongo chocan con características
@@ -49,6 +50,8 @@ async def init_db():
             Theme,
             Task,
             Setting,
-            UserList
+            UserList,
+            WeekSchedule,
+            BlockWeekSchedule
         ]
     )
