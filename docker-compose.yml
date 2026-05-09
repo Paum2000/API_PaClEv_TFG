@@ -7,7 +7,7 @@ services:
     container_name: paclev_mongo
     ports:
       # Exponemos el puerto para poder conectarnos a la BD
-      - "27017:27017"
+      - "25012:27017"
     volumes:
       # Guardamos los datos físicamente para que no se borren al apagar
       - mongo_data:/data/db
@@ -19,7 +19,7 @@ services:
       dockerfile: Dockerfile
     container_name: paclev_api
     ports:
-      # Exponemos el puerto 8000 para conectarnos por este
+      # Exponemos el puerto 25011 para conectarnos por este
       - "25011:8000"
     environment:
       - MONGODB_URL=${MONGODB_URL}
