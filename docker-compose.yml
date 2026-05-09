@@ -21,8 +21,16 @@ services:
     ports:
       # Exponemos el puerto 8000 para conectarnos por este
       - "25011:8000"
-    env_file:
-      - .env
+    environment:
+      - MONGODB_URL=${MONGODB_URL}
+      - DB_NAME=${DB_NAME}
+      - SECRET_KEY=${SECRET_KEY}
+      - ALGORITHM=${ALGORITHM}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
+      - FIRST_ADMIN_EMAIL=${FIRST_ADMIN_EMAIL}
+      - FIRST_ADMIN_PASSWORD=${FIRST_ADMIN_PASSWORD}
+      - FIRST_ADMIN_NAME=${FIRST_ADMIN_NAME}
+      - FIRST_ADMIN_NICKNAME=${FIRST_ADMIN_NICKNAME}
     depends_on:
       - mongodb
     volumes:
