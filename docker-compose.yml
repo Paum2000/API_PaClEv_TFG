@@ -33,9 +33,7 @@ services:
       - FIRST_ADMIN_NICKNAME=${FIRST_ADMIN_NICKNAME}
     depends_on:
       - mongodb
-    volumes:
-      # Sincronizamos all código en tiempo real (para no tener que reconstruir al cambiar algo)
-      - .:/app
+
 
 volumes:
   mongo_data:
