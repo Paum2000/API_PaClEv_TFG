@@ -3,7 +3,7 @@ version: '3.8'
 services:
   # 1. La base de datos MongoDB real
   mongodb:
-    image: mongo:latest
+    image: mongo:4.4.29
     container_name: paclev_mongo
     ports:
       # Exponemos el puerto para poder conectarnos a la BD
