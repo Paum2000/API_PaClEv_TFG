@@ -27,6 +27,9 @@ class UserOut(UserBase):
     # Como no hereda de UserCreate, la contraseña no existe aquí.
     id: Optional[int] = Field(None, alias="_id")
 
+    points: int
+    points_earned_today: int
+
     model_config = ConfigDict(populate_by_name=True, from_attributes=True)
 
 class UserUpdate(BaseModel):

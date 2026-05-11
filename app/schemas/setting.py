@@ -5,8 +5,8 @@ class SettingBase(BaseModel):
     # Define las propiedades estéticas y de localización básicas.
     # Son opcionales o tienen valores por defecto, por lo que el usuario
     # no está obligado a enviarlas al registrarse.
-    user_id: Optional[int] = None
     theme_id: int
+
     # Color hexadecimal para detalles de la UI (ej: "#FF5733")
     accent_color: Optional[str] = None
 
@@ -19,6 +19,7 @@ class SettingCreate(SettingBase):
 class SettingOut(SettingBase):
     # Esto es exactamente lo que recibirá el frontend cuando pida la configuración.
     id: int = Field(alias="_id")        # El ID único de la configuración en Mongo
+    user_id: int                        # Identificador del dueño de la configuración
 
     model_config = ConfigDict(populate_by_name=True, from_attributes=True)
 

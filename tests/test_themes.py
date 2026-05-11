@@ -3,16 +3,19 @@ from fastapi.testclient import TestClient
 # --- TEST 1: Crear un tema nuevo ---
 def test_create_theme_exito(client: TestClient, admin_token_headers):
     # Mandamos los datos usando nuestra llave de Administrador.
+    # 💡 CAMBIO: Añadimos 'price' e 'is_default' para probar la nueva estructura de la tienda.
     response = client.post(
         "/themes/",
-        json={"name": "Modo Oscuro"},
+        json={"name": "Modo Oscuro Premium", "price": 500, "is_default": False},
         headers=admin_token_headers
     )
 
-    # Verificamos que la API da el OK (200) y que el nombre devuelto coincide.
+    # Verificamos que la API da el OK (200) y que los datos coinciden.
     assert response.status_code == 200
     data = response.json()
-    assert data["name"] == "Modo Oscuro"
+    assert data["name"] == "Modo Oscuro Premium"
+    assert data["price"] == 500
+    assert data["is_default"] is False
 
     # Nos aseguramos de que la base de datos realmente le asignó un ID.
     theme_id = data.get("id") or data.get("_id")
@@ -24,7 +27,7 @@ def test_get_themes(client: TestClient, admin_token_headers):
     # 1. El administrador crea un tema a mano para que la lista no venga vacía.
     client.post(
         "/themes/",
-        json={"name": "Modo Claro"},
+        json={"name": "Modo Claro", "price": 0, "is_default": True},
         headers=admin_token_headers
     )
 
@@ -43,21 +46,23 @@ def test_update_theme(client: TestClient, admin_token_headers):
     # Creamos un tema de prueba ("Azul") con nuestro admin.
     res_create = client.post(
         "/themes/",
-        json={"name": "Azul"},
+        json={"name": "Azul", "price": 100},
         headers=admin_token_headers
     )
     theme_id = res_create.json().get("id") or res_create.json().get("_id")
 
-    # Le pasamos a la API los nuevos datos (cambiamos "Azul" por "Rojo") usando la llave.
+    # Le pasamos a la API los nuevos datos usando la llave.
+    # 💡 CAMBIO: Probamos a cambiar no solo el nombre, ¡sino también a subirle el precio!
     res_update = client.put(
         f"/themes/{theme_id}",
-        json={"name": "Rojo"},
+        json={"name": "Rojo", "price": 250},
         headers=admin_token_headers
     )
 
-    # Confirmamos que no hay errores y que el nombre se ha actualizado correctamente.
+    # Confirmamos que no hay errores y que el nombre y el precio se han actualizado correctamente.
     assert res_update.status_code == 200
     assert res_update.json()["name"] == "Rojo"
+    assert res_update.json()["price"] == 250
 
 
 # --- TEST 4: Borrar un tema y comprobar que desaparece ---

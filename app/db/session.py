@@ -2,6 +2,7 @@ import os
 from motor.motor_asyncio import AsyncIOMotorClient
 from beanie import init_beanie
 from app.core.setting import settings
+from app.models.inventory import UserInventory
 
 # Importamos todos los modelos de base de datos que Beanie necesita gestionar.
 from app.models.event import Event
@@ -52,6 +53,7 @@ async def init_db():
             Setting,
             UserList,
             WeekSchedule,
-            BlockWeekSchedule
+            BlockWeekSchedule,
+            UserInventory
         ]
     )

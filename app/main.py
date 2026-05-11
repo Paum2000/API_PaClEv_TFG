@@ -10,7 +10,7 @@ from app.models.user import User
 from app.core.security import get_password_hash
 
 from app.db.session import init_db
-from app.routers import users, tasks, events, themes, settings, auth, lists, schedule
+from app.routers import users, tasks, events, themes, settings, auth, lists, schedule, store
 
 ADMIN_USER_NAME = os.getenv("FIRST_ADMIN_NAME", "admin")
 ADMIN_EMAIL = os.getenv("FIRST_ADMIN_EMAIL", "admin@miproyecto.com")
@@ -102,3 +102,4 @@ app.include_router(settings.router)
 app.include_router(auth.router)
 app.include_router(lists.router)
 app.include_router(schedule.router)
+app.include_router(store.router)

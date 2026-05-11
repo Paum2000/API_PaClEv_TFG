@@ -93,3 +93,36 @@ def test_delete_task(client: TestClient, normal_user_token_headers):
 
     # Si devuelve el código de OK, todo ha ido bien.
     assert res_delete.status_code == 200
+
+
+# --- TEST 5: Completar una tarea otorga puntos (Gamificación) ---
+def test_completar_tarea_da_puntos(client: TestClient, normal_user_token_headers):
+    # 1. Creamos una tarea nueva sin completar
+    res_create = client.post(
+        "/tasks/",
+        json={
+            "title": "Tarea para ganar puntos",
+            "start_date": "2026-05-01T08:00:00",
+            "completed": False
+        },
+        headers=normal_user_token_headers
+    )
+    task_id = res_create.json().get("id") or res_create.json().get("_id")
+
+    # 2. Consultamos a la API cuántos puntos tenemos ANTES de completarla
+    res_me_antes = client.get("/users/me", headers=normal_user_token_headers)
+    puntos_antes = res_me_antes.json().get("points", 0)
+
+    # 3. Marcamos la tarea como completada (esto debe disparar la lógica interna de la API)
+    client.put(
+        f"/tasks/{task_id}",
+        json={"completed": True},
+        headers=normal_user_token_headers
+    )
+
+    # 4. Volvemos a consultar nuestros puntos DESPUÉS de completarla
+    res_me_despues = client.get("/users/me", headers=normal_user_token_headers)
+    puntos_despues = res_me_despues.json().get("points", 0)
+
+    # 5. Comprobamos que la magia del TFG ha funcionado: nos han sumado 10 puntos.
+    assert puntos_despues == puntos_antes + 10

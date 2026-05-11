@@ -1,16 +1,19 @@
-from beanie import Document, before_event, Insert
+from beanie import Document, Indexed, before_event, Insert
 from pydantic import Field, ConfigDict
 from typing import Optional
 # Importamos la base desde tus esquemas
-from app.schemas.theme import ThemeBase
+from app.schemas.inventory import InventoryBase
 
-class Theme(Document, ThemeBase):
+class UserInventory(Document, InventoryBase):
+    # Tu sistema de IDs autoincrementales
     id: Optional[int] = Field(default=None, alias="_id")
 
-    is_default: bool = Field(default=False)
+    # Guardamos de quién es el objeto y le ponemos un índice (Indexed)
+    # para que cuando el usuario abra su inventario, la búsqueda sea ultrarrápida.
+    user_id: Indexed(int)
 
     class Settings:
-        name = "themes"
+        name = "user_inventory"
 
     model_config = ConfigDict(populate_by_name=True, from_attributes=True)
 

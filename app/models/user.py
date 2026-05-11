@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from beanie import Document, Indexed, before_event, Insert
 from pydantic import Field, ConfigDict, EmailStr
 from typing import Optional
@@ -14,6 +16,10 @@ class User(Document, UserBase):
     # Campos exclusivo de la BD
     password_hash: str
     is_admin: bool = False
+
+    points: int = Field(default=0)
+    points_earned_today: int = Field(default=0)
+    last_points_reset: str = Field(default="")
 
     class Settings:
         name = "users"

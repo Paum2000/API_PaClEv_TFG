@@ -4,6 +4,8 @@ from typing import Optional
 class ThemeBase(BaseModel):
     # Define la estructura básica de un tema visual.
     name: str
+    price: int = Field(default=0)
+    is_default: bool = False
 
 class ThemeCreate(ThemeBase):
     # Esquema para cuando el administrador crea un tema nuevo.
@@ -20,3 +22,4 @@ class ThemeUpdate(BaseModel):
     # Esquema para modificar un tema que ya existe.
     # Como siempre en los Update, los campos se vuelven opcionales (Optional).
     name: Optional[str] = None
+    price: Optional[int] = None

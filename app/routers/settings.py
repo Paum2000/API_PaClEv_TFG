@@ -15,10 +15,15 @@ async def create_setting(
 ):
     # Pisamos el user_id que venga en el JSON
     # con el ID real del token. Así es imposible que se la cree a otro.
-    setting.user_id = current_user.id
-    # Recibe el esquema SettingCreate (que exige user_id y theme_id)
-    # y se lo pasa al servicio para guardarlo en MongoDB.
-    return await setting_service.create_setting(setting)
+    try:
+        # Recibe el esquema SettingCreate (que exige user_id y theme_id)
+        # y se lo pasa al servicio para guardarlo en MongoDB.
+        # Le pasamos también el current_user.id para las validaciones de la tienda.
+        return await setting_service.create_setting(setting, current_user.id)
+    except ValueError as e:
+        # Si el usuario intenta equipar algo que no ha comprado, el servicio
+        # lanza un ValueError que aquí transformamos en un error 400.
+        raise HTTPException(status_code=400, detail=str(e))
 
 # response_model=SettingOut (Sin List): Indica que devolveremos un solo objeto.
 @router.get("/my_settings", response_model=SettingOut)
@@ -50,9 +55,12 @@ async def update_setting(
     if not config_del_usuario or config_del_usuario.id != setting_id:
         raise HTTPException(status_code=403, detail="No tienes permiso para modificar esta configuración")
 
-    # 3. Si es suya, actualizamos
-    updated_setting = await setting_service.update_setting(setting_id, setting)
-    return updated_setting
+    try:
+        # 3. Si es suya, actualizamos comprobando que tenga comprados los colores/temas.
+        updated_setting = await setting_service.update_setting(setting_id, setting)
+        return updated_setting
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @router.delete("/{setting_id}")
 async def delete_setting(
