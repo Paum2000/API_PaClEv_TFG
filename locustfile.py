@@ -8,7 +8,7 @@ class ComportamientoUsuarioAPI(HttpUser):
     user_id_generado = None
 
     def on_start(self):
-        """Se ejecuta una vez cuando el usuario virtual 'entra' a la app."""
+
         timestamp = time.time()
         email_unico = f"locust_{timestamp}_{random.randint(1, 99999)}@test.com"
 
@@ -18,8 +18,6 @@ class ComportamientoUsuarioAPI(HttpUser):
             "password": "password_seguro"
         })
 
-        # Minúsculo escudo protector: Solo guardamos el ID si todo salió bien (200 OK)
-        # Si falla (ese 1%), este usuario simplemente no hará nada, pero no romperá el programa.
         if response.status_code == 200:
             self.user_id_generado = response.json().get("id") or response.json().get("_id")
 
