@@ -2,16 +2,19 @@ import os
 from motor.motor_asyncio import AsyncIOMotorClient
 from beanie import init_beanie
 from app.core.setting import settings
-from app.models.inventory import UserInventory
 
 # Importamos todos los modelos de base de datos que Beanie necesita gestionar.
 from app.models.event import Event
 from app.models.setting import Setting
+from app.models.inventory import UserInventory
 from app.models.task import Task
 from app.models.theme import Theme
 from app.models.user import User
 from app.models.list import UserList
 from app.models.schedule import WeekSchedule, BlockWeekSchedule
+from app.models.group import Group
+from app.models.group_member import GroupMember
+from app.models.friend import Friend
 
 
 # A veces, ciertas versiones de Motor/PyMongo chocan con características
@@ -54,6 +57,9 @@ async def init_db():
             UserList,
             WeekSchedule,
             BlockWeekSchedule,
+            Group,
+            GroupMember,
+            Friend,
             UserInventory
         ]
     )

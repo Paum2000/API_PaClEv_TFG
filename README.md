@@ -15,6 +15,7 @@
 |---|---|
 | **Usuarios** | Registro, login y gestión de perfil seguro con sistema de puntos y gamificación. |
 | **Autenticación** | Login stateless con tokens JWT y contraseñas encriptadas (Bcrypt). |
+| **Social y Grupos** | Gestión de amistades bidireccional y creación de grupos colaborativos con control estricto de roles (Administrador/Miembro). |
 | **Horarios** | Gestión de múltiples horarios semanales (ej. Verano/Invierno) con bloques de actividades personalizados por día y hora. |
 | **Eventos** | CRUD de eventos con soporte avanzado para recurrencia y control independiente de fechas y horas. |
 | **Tareas** | Gestión de tareas con seguimiento de estado. La finalización de tareas otorga puntos al usuario (máximo 100/día). |
@@ -92,7 +93,20 @@ La API estará disponible en: **http://localhost:25011**
 
 > Todos los endpoints privados requieren el token JWT en la cabecera `Authorization: Bearer <token>`.
 
-### Tienda e Inventario 
+### Social y Grupos
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| `POST` | `/friends/request` | Enviar solicitud de amistad a un usuario |
+| `POST` | `/friends/accept/{id}` | Aceptar una solicitud de amistad pendiente |
+| `GET` | `/friends/My_friends` | Listar todos los amigos aceptados |
+| `DELETE` | `/friends/{friend_id}` | Eliminar una relación de amistad |
+| `POST` | `/groups/` | Crear un nuevo grupo (auto-asigna rol de administrador) |
+| `GET` | `/groups/{group_id}/members` | Listar los miembros de un grupo |
+| `POST` | `/groups/{group_id}/members` | Añadir un nuevo miembro al grupo (Solo Admin) |
+| `DELETE` | `/groups/{group_id}/members/{user_id}` | Abandonar grupo o expulsar miembro (Solo Admin) |
+
+### Tienda e Inventario
 
 | Método | Ruta | Descripción |
 |---|---|---|
@@ -141,13 +155,14 @@ La API incluye documentación autogenerada con **Swagger UI**, protegida por Bas
 
 ## Testing y Calidad del Código 
 
-Se ha implementado una estrategia de pruebas exhaustiva, alcanzando un **92% de cobertura de código** y superando una batería de **40 tests automatizados** que validan:
+Se ha implementado una estrategia de pruebas exhaustiva, alcanzando un **93% de cobertura total de código** y superando una batería de **42 tests automatizados** que validan tanto los flujos de éxito (Happy Paths) como la tolerancia a fallos (Sad Paths):
 
+- **Módulo Social:** Cobertura del 100% en la gestión de amistades y blindaje de la lógica de grupos (control de intrusos, prevención de duplicados, gestión de abandono/expulsión).
 - **Flujo de Gamificación:** Validación de suma de puntos tras completar tareas y respeto del límite diario (100 pts/día).
 - **Ciclo de Compra:** Simulación de ahorro y validación de saldo para adquisición de ítems (Temas y Colores).
 - **Seguridad y Candados:** Verificación de que el usuario no puede equipar ítems que no posee en su inventario.
-- **Integridad:** Borrado en cascada (ej. Horarios y sus bloques) y prevención de compras duplicadas.
-- **Validación:** Control estricto de esquemas Pydantic (Error 422) y accesos no autorizados (401/403).
+- **Integridad:** Borrado en cascada (ej. Horarios y sus bloques) y generación concurrente de IDs de alta precisión para evitar colisiones.
+- **Validación:** Control estricto de esquemas Pydantic (Error 422) y accesos no autorizados (401/403/405).
 
 ### Ejecutar los tests y generar reporte de cobertura
 

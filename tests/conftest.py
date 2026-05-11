@@ -57,3 +57,21 @@ def admin_token_headers(client):
     })
     token = response.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
+
+@pytest.fixture
+def other_user_token_headers(client):
+    # Creamos al segundo usuario
+    client.post("/users/", json={
+        "user_name": "Otro Usuario",
+        "nickname": "usuario_amigo",
+        "email": "amigo@test.com",
+        "password": "password123"
+    })
+
+    # Logueamos al segundo usuario
+    response = client.post("/auth/login", data={
+        "username": "amigo@test.com",
+        "password": "password123"
+    })
+    token = response.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
