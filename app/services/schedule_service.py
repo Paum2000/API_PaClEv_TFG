@@ -74,3 +74,7 @@ async def update_block(user_id: int, block_id: int, block_in: BlockUpdate) -> Bl
 async def delete_block(user_id: int, block_id: int):
     block = await _get_block_and_verify_owner(block_id, user_id)
     await block.delete()
+
+async def get_schedules_by_group(group_id: int):
+    # Obtiene los horarios base que pertenecen a un grupo.
+    return await WeekSchedule.find(WeekSchedule.group_id == group_id).to_list()

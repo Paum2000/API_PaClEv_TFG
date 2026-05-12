@@ -6,6 +6,7 @@ class TaskBase(BaseModel):
     # Define los atributos que conforman una Tarea en el sistema.
     title: str
     description: Optional[str] = None
+    group_id: Optional[int] = None
 
     # Control de tiempo.
     start_date: datetime
@@ -42,3 +43,4 @@ class TaskUpdate(BaseModel):
     completed: Optional[bool] = None
     color: Optional[str] = None
     priority: Optional[str] = None
+    group_id: Optional[int] = None

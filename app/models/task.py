@@ -10,6 +10,7 @@ class Task(Document, TaskBase):
 
     # Índice para acelerar las búsquedas por usuario
     user_id: Indexed(int)
+    group_id: Optional[int] = None
 
     class Settings:
         name = "tasks"

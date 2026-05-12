@@ -8,6 +8,7 @@ class Event(Document, EventBase):
 
     # Mantenemos el user_id indexado para las búsquedas del GET
     user_id: Indexed(int)
+    group_id: Optional[int] = None
 
 
     class Settings:

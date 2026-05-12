@@ -6,6 +6,7 @@ from typing import Optional
 class WeekSchedule(Document):
     id: Optional[int] = Field(default=None, alias="_id")
     user_id: Indexed(int) # FK: Dueño del horario
+    group_id: Optional[int] = None
     title: Optional[str] = None
 
     class Settings:

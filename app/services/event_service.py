@@ -34,3 +34,7 @@ async def delete_event(event_id: int) -> bool:
         await event.delete()
         return True
     return False
+
+async def get_events_by_group(group_id: int):
+    #Busca todos los eventos que pertenezcan a un grupo en concreto.
+    return  await Event.find(Event.group_id == group_id).to_list()

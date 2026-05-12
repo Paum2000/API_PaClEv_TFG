@@ -9,6 +9,7 @@ class UserList(Document, ListBase):
 
     # Índice para búsquedas rápidas, pero NO unique, porque un usuario tendrá varias listas
     user_id: Indexed(int)
+    group_id: Optional[int] = None
 
     class Settings:
         name = "user_lists"

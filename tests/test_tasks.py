@@ -126,3 +126,36 @@ def test_completar_tarea_da_puntos(client: TestClient, normal_user_token_headers
 
     # 5. Comprobamos que la magia del TFG ha funcionado: nos han sumado 10 puntos.
     assert puntos_despues == puntos_antes + 10
+
+
+# --- TEST 6: 🚀 NUEVO - Flujo Colaborativo y Seguridad para Tareas ---
+def test_group_tasks_flow(client: TestClient, normal_user_token_headers, other_user_token_headers):
+    # 1. El usuario A crea un grupo (ej: Equipo TFG)
+    res_group = client.post("/groups/", json={"name": "Equipo TFG"}, headers=normal_user_token_headers)
+    assert res_group.status_code == 200
+    group_id = res_group.json().get("id") or res_group.json().get("_id")
+
+    # 2. El usuario A crea una tarea y la asigna al grupo
+    res_task = client.post(
+        "/tasks/",
+        json={
+            "title": "Redactar la memoria",
+            "start_date": "2026-05-15T09:00:00",
+            "group_id": group_id
+        },
+        headers=normal_user_token_headers
+    )
+    assert res_task.status_code == 200
+    assert res_task.json()["group_id"] == group_id
+
+    # 3. Happy Path: El usuario A pide las tareas de su grupo
+    res_get_group = client.get(f"/tasks/group/{group_id}", headers=normal_user_token_headers)
+    assert res_get_group.status_code == 200
+    data = res_get_group.json()
+    assert len(data) >= 1
+    assert any(t["title"] == "Redactar la memoria" for t in data)
+
+    # 4. Sad Path (Seguridad): El usuario B intenta espiar las tareas del grupo de A
+    res_forbidden = client.get(f"/tasks/group/{group_id}", headers=other_user_token_headers)
+    assert res_forbidden.status_code == 403
+    assert "permiso" in res_forbidden.json()["detail"].lower()

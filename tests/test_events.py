@@ -7,7 +7,7 @@ def test_create_event_exito(client: TestClient, normal_user_token_headers):
         json={
             "title": "Reunión Tribunal TFG",
             "description": "Defensa final",
-            "start_date": "2026-07-01",        
+            "start_date": "2026-07-01",
             "start_time": "10:00:00",
             "end_date": "2026-07-01",
             "end_time": "12:00:00",

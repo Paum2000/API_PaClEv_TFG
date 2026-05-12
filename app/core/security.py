@@ -7,6 +7,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 # Importamos el modelo de Usuario para poder buscarlo en la BD
 from app.models.user import User
+from app.services import group_service
 
 SECRET_KEY = os.getenv("SECRET_KEY", "clave_de_respaldo_para_desarrollo_local")
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
@@ -84,3 +85,14 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
 
     # 4. Devolvemos el objeto Usuario completo.
     return user
+
+async def verify_group_access(group_id: int, current_user: User = Depends(get_current_user)):
+    # Verifica si el usuario actual pertenece al grupo solicitado.
+    is_member = await group_service.is_user_in_group(current_user.id, group_id)
+
+    if not is_member:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tienes permiso para acceder a los datos de este grupo"
+        )
+    return group_id

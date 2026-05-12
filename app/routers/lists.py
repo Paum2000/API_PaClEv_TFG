@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from typing import List
 from app.schemas.list import ListCreate, ListOut, ListUpdate
 from app.services import list_service
-from app.core.security import get_current_user
+from app.core.security import get_current_user, verify_group_access
 from app.models.user import User
+from typing import List as TypingList
 
 router = APIRouter(prefix="/lists", tags=["Lists"])
 
@@ -12,6 +13,10 @@ async def create_list(
         list_in: ListCreate,
         current_user: User = Depends(get_current_user)
 ):
+    # Si viene con un group_id, verificamos la seguridad antes de insertar
+    if list_in.group_id:
+        await verify_group_access(list_in.group_id, current_user)
+
     # Le pasamos el ID del usuario al servicio para asegurar la propiedad
     return await list_service.create_list(list_in, current_user.id)
 
@@ -51,3 +56,7 @@ async def delete_list(
 
     await list_service.delete_list(list_id)
     return {"message": "Lista eliminada correctamente"}
+
+@router.get("/group/{group_id}", response_model=TypingList[ListOut])
+async def get_group_lists(group_id: int = Depends(verify_group_access)):
+    return await list_service.get_lists_by_group(group_id)

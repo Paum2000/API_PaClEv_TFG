@@ -3,6 +3,7 @@ from typing import Optional, List as PyList
 
 class ListBase(BaseModel):
     name: str
+    group_id: Optional[int] = None
     items: PyList[str] = []
 
 class ListCreate(ListBase):
@@ -18,3 +19,4 @@ class ListUpdate(BaseModel):
     # Todo opcional para los métodos PUT/PATCH
     name: Optional[str] = None
     items: Optional[PyList[str]] = None
+    group_id: Optional[int] = None

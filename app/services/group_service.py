@@ -86,3 +86,14 @@ async def remove_member_from_group(current_user: User, group_id: int, user_to_re
 
     await member_record.delete()
     return True, None
+
+async def is_user_in_group(user_id: int, group_id: int) -> bool:
+    # Verifica si un usuario es miembro de un grupo específico.
+    from app.models.group_member import GroupMember
+
+    member = await GroupMember.find_one(
+        GroupMember.group_id == group_id,
+        GroupMember.user_id == user_id
+    )
+    return member is not None
+

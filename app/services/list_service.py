@@ -26,3 +26,6 @@ async def delete_list(list_id: int) -> bool:
         await db_list.delete()
         return True
     return False
+
+async def get_lists_by_group(group_id: int):
+    return await UserList.find(UserList.group_id == group_id).to_list()

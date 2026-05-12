@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from typing import List
 from app.schemas.schedule import WeekScheduleCreate, WeekScheduleOut, WeekScheduleUpdate,BlockCreate, BlockOut, BlockUpdate
 from app.services import schedule_service
-from app.core.security import get_current_user
+from app.core.security import get_current_user, verify_group_access
 from app.models.user import User
 
 router = APIRouter(prefix="/schedules", tags=["Schedules"])
@@ -13,6 +13,10 @@ async def create_schedule(
         schedule_in: WeekScheduleCreate,
         current_user: User = Depends(get_current_user)
 ):
+    # Si viene con un group_id, verificamos la seguridad antes de insertar
+    if schedule_in.group_id:
+        await verify_group_access(schedule_in.group_id, current_user)
+
     return await schedule_service.create_schedule(current_user.id, schedule_in)
 
 @router.get("/", response_model=List[WeekScheduleOut])
@@ -67,3 +71,8 @@ async def delete_block(
 ):
     await schedule_service.delete_block(current_user.id, block_id)
     return {"message": "Bloque eliminado correctamente"}
+
+@router.get("/group/{group_id}", response_model=List[WeekScheduleOut])
+async def get_group_schedules(group_id: int = Depends(verify_group_access)):
+    # Obtiene todos los horarios compartidos en un grupo.
+    return await schedule_service.get_schedules_by_group(group_id)

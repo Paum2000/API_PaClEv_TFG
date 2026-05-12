@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import List
 from app.schemas.event import EventCreate, EventOut, EventUpdate, EventBase
 from app.services import event_service
-from app.core.security import get_current_user
+from app.core.security import get_current_user, verify_group_access
 from app.models.user import User
 
 # prefix="/events": Todas las rutas aquí empezarán con /events automáticamente.
@@ -25,6 +25,10 @@ async def create_event(
 
     # Creamos el esquema EventCreate que espera el servicio
     event_to_create = EventCreate(**event_data)
+
+    # Si el evento viene con un group_id, verificamos la seguridad antes de insertar
+    if event_in.group_id:
+        await verify_group_access(event_in.group_id, current_user)
 
     return await event_service.create_event(event_to_create)
 
@@ -76,3 +80,12 @@ async def delete_event(
     # 3. Si llegamos aquí, es seguro borrarlo
     await event_service.delete_event(event_id)
     return {"message": "Evento eliminado correctamente."}
+
+@router.get("/group/{group_id}", response_model=List[EventOut])
+async def get_group_events(
+        # Al poner Depends(verify_group_access), FastAPI hace 3 cosas solas:
+        # 1. Pide el token. 2. Comprueba si estás en el grupo. 3. Te devuelve el ID del grupo.
+        group_id: int = Depends(verify_group_access)
+):
+    # Obtiene todos los eventos compartidos en un grupo
+    return await event_service.get_events_by_group(group_id)

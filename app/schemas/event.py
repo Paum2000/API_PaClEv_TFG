@@ -12,6 +12,7 @@ class EventBase(BaseModel):
     start_time: Optional[time] = None      # A qué hora
     end_date: Optional[date] = None        # Qué día termina
     end_time: Optional[time] = None        # A qué hora termina
+    group_id: Optional[int] = None
 
     # Banderas lógicas, útiles para el frontend
     is_all_day: bool = False
@@ -50,3 +51,4 @@ class EventUpdate(BaseModel):
     is_recurring: Optional[bool] = None
     recurrence: Optional[str] = None
     color: Optional[str] = None
+    group_id: Optional[int] = None

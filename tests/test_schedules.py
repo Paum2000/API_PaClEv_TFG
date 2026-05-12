@@ -133,3 +133,35 @@ def test_delete_schedule_en_cascada(client: TestClient, normal_user_token_header
 
     # Con el 200 me basta para saber que se borró el horario (y sus bloques en cascada)
     assert res_delete.status_code == 200
+
+
+# --- TEST 7: 🚀 NUEVO - Flujo Colaborativo y Seguridad para Horarios ---
+def test_group_schedules_flow(client: TestClient, normal_user_token_headers, other_user_token_headers):
+    # 1. El usuario A crea un grupo (ej: Grupo de la Universidad)
+    res_group = client.post("/groups/", json={"name": "Grupo Universidad"}, headers=normal_user_token_headers)
+    assert res_group.status_code == 200
+    group_id = res_group.json().get("id") or res_group.json().get("_id")
+
+    # 2. El usuario A crea un horario base y lo asigna al grupo
+    res_schedule = client.post(
+        "/schedules/",
+        json={
+            "title": "Horario de Clases Compartido",
+            "group_id": group_id
+        },
+        headers=normal_user_token_headers
+    )
+    assert res_schedule.status_code == 200
+    assert res_schedule.json()["group_id"] == group_id
+
+    # 3. Happy Path: El usuario A pide los horarios de su grupo
+    res_get_group = client.get(f"/schedules/group/{group_id}", headers=normal_user_token_headers)
+    assert res_get_group.status_code == 200
+    data = res_get_group.json()
+    assert len(data) >= 1
+    assert any(s["title"] == "Horario de Clases Compartido" for s in data)
+
+    # 4. Sad Path (Seguridad): El usuario B intenta espiar el horario del grupo de A
+    res_forbidden = client.get(f"/schedules/group/{group_id}", headers=other_user_token_headers)
+    assert res_forbidden.status_code == 403
+    assert "permiso" in res_forbidden.json()["detail"].lower()

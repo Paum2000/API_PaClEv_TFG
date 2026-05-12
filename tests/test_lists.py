@@ -84,3 +84,35 @@ def test_delete_list(client: TestClient, normal_user_token_headers):
     # Verificamos el OK
     assert res_delete.status_code == 200
     assert res_delete.json()["message"] == "Lista eliminada correctamente"
+
+# --- TEST 5: 🚀 NUEVO - Flujo Colaborativo y Seguridad para Listas ---
+def test_group_lists_flow(client: TestClient, normal_user_token_headers, other_user_token_headers):
+    # 1. El usuario A crea un grupo (ej: Compañeros de piso)
+    res_group = client.post("/groups/", json={"name": "Piso Compartido"}, headers=normal_user_token_headers)
+    assert res_group.status_code == 200
+    group_id = res_group.json().get("id") or res_group.json().get("_id")
+
+    # 2. El usuario A crea una lista y la asigna al grupo
+    res_list = client.post(
+        "/lists/",
+        json={
+            "name": "Compra conjunta",
+            "items": ["Friegasuelos", "Papel higiénico"],
+            "group_id": group_id
+        },
+        headers=normal_user_token_headers
+    )
+    assert res_list.status_code == 200
+    assert res_list.json()["group_id"] == group_id
+
+    # 3. Happy Path: El usuario A pide las listas de su grupo
+    res_get_group = client.get(f"/lists/group/{group_id}", headers=normal_user_token_headers)
+    assert res_get_group.status_code == 200
+    data = res_get_group.json()
+    assert len(data) >= 1
+    assert any(l["name"] == "Compra conjunta" for l in data)
+
+    # 4. Sad Path (Seguridad): El usuario B intenta espiar la lista del grupo de A
+    res_forbidden = client.get(f"/lists/group/{group_id}", headers=other_user_token_headers)
+    assert res_forbidden.status_code == 403
+    assert "permiso" in res_forbidden.json()["detail"].lower()

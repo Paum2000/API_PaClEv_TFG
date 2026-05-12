@@ -75,3 +75,6 @@ async def delete_task(task_id: int):
     task = await Task.get(task_id)
     if task:
         await task.delete()
+
+async def get_tasks_by_group(group_id: int):
+    return await Task.find(Task.group_id == group_id).to_list()

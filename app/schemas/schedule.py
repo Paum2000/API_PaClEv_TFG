@@ -4,6 +4,7 @@ from typing import Optional
 # ESQUEMAS PARA EL HORARIO (WeekSchedule)
 class WeekScheduleBase(BaseModel):
     title: Optional[str] = None
+    group_id: Optional[int] = None
 
 class WeekScheduleCreate(WeekScheduleBase):
     pass
@@ -16,6 +17,7 @@ class WeekScheduleOut(WeekScheduleBase):
 
 class WeekScheduleUpdate(BaseModel):
     title: Optional[str] = None
+    group_id: Optional[int] = None
 
 # ESQUEMAS PARA LOS BLOQUES (BlockWeekSchedule)
 class BlockBase(BaseModel):

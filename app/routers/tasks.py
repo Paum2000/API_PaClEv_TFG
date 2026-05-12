@@ -2,18 +2,24 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import List
 from app.schemas.task import TaskCreate, TaskOut, TaskUpdate
 from app.services import task_service
-from app.core.security import get_current_user
+from app.core.security import get_current_user, verify_group_access
 from app.models.user import User
 
 router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
 @router.post("/", response_model=TaskOut)
 async def create_task(
-        task: TaskCreate,
-        current_user: User = Depends(get_current_user) 
+        task_in: TaskCreate, # Lo llamamos task_in para que sea más claro
+        current_user: User = Depends(get_current_user)
 ):
-    task.user_id = current_user.id
-    return await task_service.create_task(task)
+    # 1. Asignamos el dueño de la tarea
+    task_in.user_id = current_user.id
+
+    if task_in.group_id is not None:
+        await verify_group_access(task_in.group_id, current_user)
+
+    # 4. Llamamos al servicio
+    return await task_service.create_task(task_in)
 
 @router.get("/my_tasks", response_model=List[TaskOut])
 async def get_user_tasks(
@@ -53,3 +59,8 @@ async def delete_task(
 
     await task_service.delete_task(task_id)
     return {"message": "Tarea eliminada correctamente."}
+
+@router.get("/group/{group_id}", response_model=List[TaskOut])
+async def get_group_tasks(group_id: int = Depends(verify_group_access)):
+    # Obtiene todas las tareas compartidas en un grupo.
+    return await task_service.get_tasks_by_group(group_id)
