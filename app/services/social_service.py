@@ -45,11 +45,10 @@ async def accept_friend_request(current_user: User, request_id: int) -> Tuple[bo
     return True, None
 
 async def get_my_friends(current_user: User) -> List[Friend]:
-    # 1. Buscamos relaciones donde el usuario sea parte (id_1 o id_2) y esté aceptada
-    return await Friend.find(And(
-        Or(Friend.user_id_1 == current_user.id, Friend.user_id_2 == current_user.id),
-        Friend.status == "ACEPTADO"
-    )).to_list()
+    # 1. Buscamos relaciones donde el usuario sea parte (id_1 o id_2)
+    return await Friend.find(
+        Or(Friend.user_id_1 == current_user.id, Friend.user_id_2 == current_user.id)
+    ).to_list()
 
 async def remove_friendship(current_user: User, friend_id: int) -> Tuple[bool, Optional[str]]:
     # 1. Buscamos la relación en cualquier dirección (bidireccional)
