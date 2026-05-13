@@ -27,6 +27,15 @@ def test_full_social_coverage(client: TestClient, normal_user_token_headers, oth
     assert res_req.status_code == 200
     req_id = res_req.json().get("id") or res_req.json().get("_id")
 
+    # 🚀 NUEVO PASO: Comprobar que aparece como "PENDIENTE" y vienen los datos hidratados
+    res_list_pending = client.get("/friends/my_friends", headers=normal_user_token_headers)
+    assert res_list_pending.status_code == 200
+    pending_data = res_list_pending.json()
+    assert len(pending_data) > 0
+    # Verificamos la hidratación del Service
+    assert pending_data[0]["status"] == "PENDIENTE"
+    assert "user_name" in pending_data[0] or "nickname" in pending_data[0]
+
     # 4. Intentar enviar la misma solicitud otra vez (400)
     res_dup = client.post("/friends/request", json={"friend_id": user_b_id}, headers=normal_user_token_headers)
     assert res_dup.status_code == 400
@@ -39,10 +48,12 @@ def test_full_social_coverage(client: TestClient, normal_user_token_headers, oth
     res_acc = client.post(f"/friends/accept/{req_id}", headers=other_user_token_headers)
     assert res_acc.status_code == 200
 
-    # 7. Listar amigos (Debe salir 1 amigo) (200)
-    res_list = client.get("/friends/my_friends", headers=normal_user_token_headers)
-    assert res_list.status_code == 200
-    assert len(res_list.json()) > 0
+    # 7. Listar amigos (Ahora debe salir como ACEPTADO) (200)
+    res_list_accepted = client.get("/friends/my_friends", headers=normal_user_token_headers)
+    assert res_list_accepted.status_code == 200
+    accepted_data = res_list_accepted.json()
+    assert len(accepted_data) > 0
+    assert accepted_data[0]["status"] == "ACEPTADO"
 
     # 8. User A elimina a User B de amigos (200)
     res_del = client.delete(f"/friends/{user_b_id}", headers=normal_user_token_headers)
@@ -74,11 +85,7 @@ def test_full_group_coverage(client: TestClient, normal_user_token_headers, othe
     assert res_add.status_code == 200
 
     # 9. User A intenta abandonar su propio grupo
-    # (Si tu lógica impide que el último admin se vaya, debe dar error)
     res_admin_leave = client.delete(f"/groups/{g_id}/members/{user_a_id}", headers=normal_user_token_headers)
-
-    # AJUSTE: Si tu API permite que se vaya, cambia esto a == 200
-    # Pero lo normal en un TFG es que el admin no pueda dejar el grupo huérfano
     assert res_admin_leave.status_code in [200, 400, 403], f"Error inesperado: {res_admin_leave.status_code}"
 
     # 11. Borrado final

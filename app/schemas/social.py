@@ -44,3 +44,10 @@ class FriendOut(BaseModel):
 
 class FriendUpdate(BaseModel):
     status: str
+
+class FriendDetailOut(BaseModel):
+    id: int
+    friend_id: int
+    nickname: str
+    user_photo: Optional[str]
+    status: str

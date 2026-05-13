@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
 
 from app.models.user import User
-from app.schemas.social import FriendRequest, FriendOut
+from app.schemas.social import FriendRequest, FriendOut, FriendDetailOut
 from app.services import social_service
 from app.core.security import get_current_user
 
@@ -22,9 +22,9 @@ async def accept_request(request_id: int, current_user: User = Depends(get_curre
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
     return {"message": "Solicitud de amistad aceptada"}
 
-@router.get("/my_friends", response_model=List[FriendOut])
+@router.get("/my_friends",response_model=List[FriendDetailOut])
 async def list_my_friends(current_user: User = Depends(get_current_user)):
-    return await social_service.get_my_friends(current_user)
+    return await social_service.get_my_friends(current_user.id)
 
 @router.delete("/{friend_id}")
 async def delete_friend(friend_id: int, current_user: User = Depends(get_current_user)):

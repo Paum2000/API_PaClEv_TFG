@@ -2,6 +2,8 @@ from typing import List, Tuple, Optional
 from beanie.operators import Or, And
 from app.models.friend import Friend
 from app.models.user import User
+from app.schemas.social import FriendDetailOut
+
 
 async def send_friend_request(current_user: User, friend_id: int) -> Tuple[Optional[Friend], Optional[str]]:
     # 1. No puedes ser tu propio amigo (sería raro)
@@ -44,11 +46,37 @@ async def accept_friend_request(current_user: User, request_id: int) -> Tuple[bo
     await request.save()
     return True, None
 
-async def get_my_friends(current_user: User) -> List[Friend]:
-    # 1. Buscamos relaciones donde el usuario sea parte (id_1 o id_2)
-    return await Friend.find(
-        Or(Friend.user_id_1 == current_user.id, Friend.user_id_2 == current_user.id)
-    ).to_list()
+async def get_my_friends(user_id: int) -> List[FriendDetailOut]:
+    # 1. Buscamos todas las relaciones del usuario
+    relationships = await Friend.find(Or(
+        Friend.user_id_1 == user_id,
+        Friend.user_id_2 == user_id
+    )).to_list()
+
+    if not relationships:
+        return []
+
+    # 2. Obtenemos todos los IDs de los amigos de una sola vez
+    friend_ids = [r.user_id_2 if r.user_id_1 == user_id else r.user_id_1 for r in relationships]
+
+    # 3. "Hidratamos" buscando todos los perfiles de golpe
+    users = await User.find({"_id": {"$in": friend_ids}}).to_list()
+    users_map = {u.id: u for u in users}
+
+    result = []
+    for rel in relationships:
+        target_id = rel.user_id_2 if rel.user_id_1 == user_id else rel.user_id_1
+        friend_user = users_map.get(target_id)
+
+        if friend_user:
+            result.append(FriendDetailOut(
+                id=rel.id,
+                friend_id=friend_user.id,
+                nickname=friend_user.user_name,
+                user_photo=friend_user.user_photo,
+                status=rel.status
+            ))
+    return result
 
 async def remove_friendship(current_user: User, friend_id: int) -> Tuple[bool, Optional[str]]:
     # 1. Buscamos la relación en cualquier dirección (bidireccional)
