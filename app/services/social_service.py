@@ -74,7 +74,8 @@ async def get_my_friends(user_id: int) -> List[FriendDetailOut]:
                 friend_id=friend_user.id,
                 nickname=friend_user.user_name,
                 user_photo=friend_user.user_photo,
-                status=rel.status
+                status=rel.status,
+                sender_id = rel.user_id_1
             ))
     return result
 

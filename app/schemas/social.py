@@ -51,3 +51,4 @@ class FriendDetailOut(BaseModel):
     nickname: str
     user_photo: Optional[str]
     status: str
+    sender_id: int

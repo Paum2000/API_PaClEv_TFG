@@ -4,7 +4,7 @@ from app.models.user import User
 from app.models.theme import Theme
 from app.models.inventory import UserInventory
 
-PRECIO_COLOR = 200
+PRECIO_COLOR = 100
 
 async def buy_theme(current_user: User, theme_id: int):
     # 1. Buscamos el tema
