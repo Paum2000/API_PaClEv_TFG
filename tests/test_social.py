@@ -27,7 +27,7 @@ def test_full_social_coverage(client: TestClient, normal_user_token_headers, oth
     assert res_req.status_code == 200
     req_id = res_req.json().get("id") or res_req.json().get("_id")
 
-    # 🚀 NUEVO PASO: Comprobar que aparece como "PENDIENTE" y vienen los datos hidratados
+    # Comprobar que aparece como "PENDIENTE" y vienen los datos hidratados
     res_list_pending = client.get("/friends/my_friends", headers=normal_user_token_headers)
     assert res_list_pending.status_code == 200
     pending_data = res_list_pending.json()
@@ -76,15 +76,22 @@ def test_full_group_coverage(client: TestClient, normal_user_token_headers, othe
     assert res_g.status_code == 200
     g_id = res_g.json().get("id") or res_g.json().get("_id")
 
-    # 🚀 NUEVO: User B (intruso) intenta ver los detalles del grupo (403)
+    # Comprobamos que el grupo aparece en "Mis Grupos" del User A
+    res_my_groups_a = client.get("/groups/my_groups", headers=normal_user_token_headers)
+    assert res_my_groups_a.status_code == 200
+    # Extraemos todos los IDs de los grupos que nos devuelve el endpoint
+    ids_grupos_a = [g.get("id") or g.get("_id") for g in res_my_groups_a.json()]
+    assert g_id in ids_grupos_a
+
+    # 2. User B (intruso) intenta ver los detalles del grupo (403)
     res_get_bad = client.get(f"/groups/{g_id}", headers=other_user_token_headers)
     assert res_get_bad.status_code == 403
 
-    # 🚀 NUEVO: User B (intruso) intenta ver los miembros del grupo (403)
+    # 3. User B (intruso) intenta ver los miembros del grupo (403)
     res_mem_bad = client.get(f"/groups/{g_id}/members", headers=other_user_token_headers)
     assert res_mem_bad.status_code == 403
 
-    # 3. User B (intruso) intenta cambiar el nombre (403 o 401)
+    # 4. User B (intruso) intenta cambiar el nombre (403 o 401)
     res_upd_bad = client.put(f"/groups/{g_id}", json={"name": "Hacked Group"}, headers=other_user_token_headers)
     assert res_upd_bad.status_code in [403, 401], f"Esperaba 403, recibí {res_upd_bad.status_code}"
 
@@ -92,11 +99,17 @@ def test_full_group_coverage(client: TestClient, normal_user_token_headers, othe
     res_add = client.post(f"/groups/{g_id}/members", json={"user_id": int(user_b_id)}, headers=normal_user_token_headers)
     assert res_add.status_code == 200
 
-    # 6. NUEVO: User B (ahora miembro) ve los detalles del grupo con éxito (200)
+    # Comprobamos que el grupo AHORA aparece en "Mis Grupos" del User B
+    res_my_groups_b = client.get("/groups/my_groups", headers=other_user_token_headers)
+    assert res_my_groups_b.status_code == 200
+    ids_grupos_b = [g.get("id") or g.get("_id") for g in res_my_groups_b.json()]
+    assert g_id in ids_grupos_b
+
+    # 6. User B (ahora miembro) ve los detalles del grupo con éxito (200)
     res_get_good = client.get(f"/groups/{g_id}", headers=other_user_token_headers)
     assert res_get_good.status_code == 200
 
-    # 7. NUEVO: User B (ahora miembro) ve la lista de miembros con éxito (200)
+    # 7. User B (ahora miembro) ve la lista de miembros con éxito (200)
     res_mem_good = client.get(f"/groups/{g_id}/members", headers=other_user_token_headers)
     assert res_mem_good.status_code == 200
     assert len(res_mem_good.json()) >= 2  # Al menos deben estar User A y User B

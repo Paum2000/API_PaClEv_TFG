@@ -1,4 +1,7 @@
 from typing import List, Tuple, Optional
+
+from beanie.odm.operators.find.comparison import In
+
 from app.models.group import Group
 from app.models.group_member import GroupMember
 from app.models.user import User
@@ -55,6 +58,22 @@ async def delete_group(current_user: User, group_id: int) -> Tuple[bool, Optiona
 
 async def get_group (group_id: int) -> Group:
     return await Group.get(group_id)
+
+async def get_my_groups(user_id: int) -> List[Group]:
+    # 1. Buscamos todas las membresías de este usuario
+    membresias = await GroupMember.find(GroupMember.user_id == user_id).to_list()
+
+    # Si no está en ningún grupo, devolvemos una lista vacía y nos ahorramos trabajo
+    if not membresias:
+        return []
+
+    # 2. Extraemos solo los IDs de los grupos en los que participa
+    group_ids = [m.group_id for m in membresias]
+
+    # 3. Buscamos todos esos grupos de golpe en la base de datos
+    mis_grupos = await Group.find(In(Group.id, group_ids)).to_list()
+
+    return mis_grupos
 
 async def get_group_members(group_id: int) -> List[GroupMember]:
     # Debuelbe la lista de miembros de un grupo específico.

@@ -13,6 +13,11 @@ router = APIRouter(prefix="/groups", tags=["Groups"])
 async def create_new_group(group_data: GroupCreate, current_user: User = Depends(get_current_user)):
     return await group_service.create_group(current_user, group_data.name)
 
+@router.get("/my_groups", response_model=List[GroupOut])
+async def get_my_groups(current_user: User = Depends(get_current_user)):
+    # Simplemente llamamos al servicio que acabamos de crear
+    return await group_service.get_my_groups(current_user.id)
+
 @router.put("/{group_id}", response_model=GroupOut)
 async def update_existing_group(group_id: int, group_data: GroupUpdate, current_user: User = Depends(get_current_user)):
     group, error = await group_service.update_group(current_user, group_id, group_data.name)
@@ -64,7 +69,7 @@ async def remove_member(group_id: int, user_id: int, current_user: User = Depend
 
     return {"message": "Miembro eliminado del grupo correctamente"}
 
-@router.get("/{group_id}", response_model=GroupOut) # Usa el schema que tengas para la salida
+@router.get("/{group_id}", response_model=GroupOut)
 async def get_group_details(group_id: int, current_user: User = Depends(get_current_user)):
 
     # 1. Comprobamos con la misma función si el usuario está dentro
@@ -79,3 +84,4 @@ async def get_group_details(group_id: int, current_user: User = Depends(get_curr
 
     # 3. Si llega hasta aquí, llamamos a la función limpia del service
     return await group_service.get_group(group_id)
+
