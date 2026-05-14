@@ -76,6 +76,14 @@ def test_full_group_coverage(client: TestClient, normal_user_token_headers, othe
     assert res_g.status_code == 200
     g_id = res_g.json().get("id") or res_g.json().get("_id")
 
+    # 🚀 NUEVO: User B (intruso) intenta ver los detalles del grupo (403)
+    res_get_bad = client.get(f"/groups/{g_id}", headers=other_user_token_headers)
+    assert res_get_bad.status_code == 403
+
+    # 🚀 NUEVO: User B (intruso) intenta ver los miembros del grupo (403)
+    res_mem_bad = client.get(f"/groups/{g_id}/members", headers=other_user_token_headers)
+    assert res_mem_bad.status_code == 403
+
     # 3. User B (intruso) intenta cambiar el nombre (403 o 401)
     res_upd_bad = client.put(f"/groups/{g_id}", json={"name": "Hacked Group"}, headers=other_user_token_headers)
     assert res_upd_bad.status_code in [403, 401], f"Esperaba 403, recibí {res_upd_bad.status_code}"
@@ -84,10 +92,19 @@ def test_full_group_coverage(client: TestClient, normal_user_token_headers, othe
     res_add = client.post(f"/groups/{g_id}/members", json={"user_id": int(user_b_id)}, headers=normal_user_token_headers)
     assert res_add.status_code == 200
 
+    # 6. NUEVO: User B (ahora miembro) ve los detalles del grupo con éxito (200)
+    res_get_good = client.get(f"/groups/{g_id}", headers=other_user_token_headers)
+    assert res_get_good.status_code == 200
+
+    # 7. NUEVO: User B (ahora miembro) ve la lista de miembros con éxito (200)
+    res_mem_good = client.get(f"/groups/{g_id}/members", headers=other_user_token_headers)
+    assert res_mem_good.status_code == 200
+    assert len(res_mem_good.json()) >= 2  # Al menos deben estar User A y User B
+
     # 9. User A intenta abandonar su propio grupo
     res_admin_leave = client.delete(f"/groups/{g_id}/members/{user_a_id}", headers=normal_user_token_headers)
     assert res_admin_leave.status_code in [200, 400, 403], f"Error inesperado: {res_admin_leave.status_code}"
 
-    # 11. Borrado final
+    # 11. Borrado final por parte del Admin
     res_del = client.delete(f"/groups/{g_id}", headers=normal_user_token_headers)
     assert res_del.status_code == 200

@@ -53,6 +53,9 @@ async def delete_group(current_user: User, group_id: int) -> Tuple[bool, Optiona
     await group.delete()
     return True, None
 
+async def get_group (group_id: int) -> Group:
+    return await Group.get(group_id)
+
 async def get_group_members(group_id: int) -> List[GroupMember]:
     # Debuelbe la lista de miembros de un grupo específico.
     return await GroupMember.find(GroupMember.group_id == group_id).to_list()
