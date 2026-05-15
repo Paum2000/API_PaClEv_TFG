@@ -79,10 +79,18 @@ def test_full_group_coverage(client: TestClient, normal_user_token_headers, othe
     # Comprobamos que el grupo aparece en "Mis Grupos" del User A
     res_my_groups_a = client.get("/groups/my_groups", headers=normal_user_token_headers)
     assert res_my_groups_a.status_code == 200
-    # Extraemos todos los IDs de los grupos que nos devuelve el endpoint
     ids_grupos_a = [g.get("id") or g.get("_id") for g in res_my_groups_a.json()]
     assert g_id in ids_grupos_a
 
+    # User A crea una TAREA asignada a ese grupo
+    res_task = client.post("/tasks/", json={
+        "title": "Presentar el TFG",
+        "start_date": "2026-06-01",
+        "group_id": g_id  # Asignada al grupo
+    }, headers=normal_user_token_headers)
+    task_id = res_task.json().get("id") or res_task.json().get("_id")
+
+    # --- SAD PATHS (Intruso) ---
     # 2. User B (intruso) intenta ver los detalles del grupo (403)
     res_get_bad = client.get(f"/groups/{g_id}", headers=other_user_token_headers)
     assert res_get_bad.status_code == 403
@@ -95,6 +103,13 @@ def test_full_group_coverage(client: TestClient, normal_user_token_headers, othe
     res_upd_bad = client.put(f"/groups/{g_id}", json={"name": "Hacked Group"}, headers=other_user_token_headers)
     assert res_upd_bad.status_code in [403, 401], f"Esperaba 403, recibí {res_upd_bad.status_code}"
 
+    # User B (intruso) pide SUS tareas. La tarea del grupo NO debe estar ahí.
+    res_tasks_bad = client.get("/tasks/my_tasks", headers=other_user_token_headers)
+    assert res_tasks_bad.status_code == 200
+    task_ids_bad = [t.get("id") or t.get("_id") for t in res_tasks_bad.json()]
+    assert task_id not in task_ids_bad  # Aseguramos que no la ve
+
+    # --- HAPPY PATHS (Ahora es miembro) ---
     # 5. User A (Admin) añade a User B
     res_add = client.post(f"/groups/{g_id}/members", json={"user_id": int(user_b_id)}, headers=normal_user_token_headers)
     assert res_add.status_code == 200
@@ -114,6 +129,12 @@ def test_full_group_coverage(client: TestClient, normal_user_token_headers, othe
     assert res_mem_good.status_code == 200
     assert len(res_mem_good.json()) >= 2  # Al menos deben estar User A y User B
 
+    # User B (miembro) vuelve a pedir SUS tareas. ¡Ahora SÍ debe estar la del grupo!
+    res_tasks_good = client.get("/tasks/my_tasks", headers=other_user_token_headers)
+    assert res_tasks_good.status_code == 200
+    task_ids_good = [t.get("id") or t.get("_id") for t in res_tasks_good.json()]
+    assert task_id in task_ids_good  # ¡Comprobamos que se han mezclado con éxito!
+
     # 9. User A intenta abandonar su propio grupo
     res_admin_leave = client.delete(f"/groups/{g_id}/members/{user_a_id}", headers=normal_user_token_headers)
     assert res_admin_leave.status_code in [200, 400, 403], f"Error inesperado: {res_admin_leave.status_code}"
@@ -121,3 +142,45 @@ def test_full_group_coverage(client: TestClient, normal_user_token_headers, othe
     # 11. Borrado final por parte del Admin
     res_del = client.delete(f"/groups/{g_id}", headers=normal_user_token_headers)
     assert res_del.status_code == 200
+
+def test_tasks_security_and_sad_paths(client: TestClient, normal_user_token_headers, other_user_token_headers):
+    # --- PREPARACIÓN ---
+    # 1. User A crea una tarea privada
+    res_task = client.post("/tasks/", json={
+        "title": "Tarea super secreta",
+        "start_date": "2026-06-01"
+    }, headers=normal_user_token_headers)
+    assert res_task.status_code == 200
+    task_id = res_task.json().get("id") or res_task.json().get("_id")
+
+    # 2. User A crea un grupo privado
+    res_g = client.post("/groups/", json={"name": "Grupo Privado"}, headers=normal_user_token_headers)
+    g_id = res_g.json().get("id") or res_g.json().get("_id")
+
+    # --- ATAQUES DEL INTRUSO (User B) ---
+
+    # Ataque 1: User B intenta editar la tarea de User A (Debe dar 403)
+    res_edit_bad = client.put(f"/tasks/{task_id}", json={"title": "Tarea Hackeada"}, headers=other_user_token_headers)
+    assert res_edit_bad.status_code == 403
+
+    # Ataque 2: User B intenta borrar la tarea de User A (Debe dar 403)
+    res_del_bad = client.delete(f"/tasks/{task_id}", headers=other_user_token_headers)
+    assert res_del_bad.status_code == 403
+
+    # Ataque 3: User B intenta crear una tarea dentro del grupo de User A (Debe dar 403)
+    res_create_group_bad = client.post("/tasks/", json={
+        "title": "Spam en tu grupo",
+        "start_date": "2026-06-01",
+        "group_id": g_id
+    }, headers=other_user_token_headers)
+    assert res_create_group_bad.status_code in [403, 401] # Depende de cómo lance el error verify_group_access
+
+    # --- ERRORES DE OBJETOS INEXISTENTES (User A) ---
+
+    # Error 1: Editar algo que no existe (Debe dar 404)
+    res_edit_404 = client.put("/tasks/9999999", json={"title": "Fantasma"}, headers=normal_user_token_headers)
+    assert res_edit_404.status_code == 404
+
+    # Error 2: Borrar algo que no existe (Debe dar 404)
+    res_del_404 = client.delete("/tasks/9999999", headers=normal_user_token_headers)
+    assert res_del_404.status_code == 404

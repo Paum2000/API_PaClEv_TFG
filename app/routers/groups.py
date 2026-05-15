@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
 
 from app.models.user import User
-from app.schemas.social import GroupCreate, GroupUpdate, GroupOut, GroupMemberAdd, GroupMemberOut
+from app.schemas.social import GroupCreate, GroupUpdate, GroupOut, GroupMemberAdd, GroupMemberOut, GroupMemberDetailOut
 from app.services import group_service
 from app.core.security import get_current_user
 from app.services.group_service import is_user_in_group
@@ -84,4 +84,26 @@ async def get_group_details(group_id: int, current_user: User = Depends(get_curr
 
     # 3. Si llega hasta aquí, llamamos a la función limpia del service
     return await group_service.get_group(group_id)
+
+@router.get("/{group_id}/members", response_model=List[GroupMemberDetailOut])
+async def get_group_members(
+        group_id: int,
+        current_user: User = Depends(get_current_user)
+):
+    # Devuelve la lista de miembros de un grupo con sus datos hidratados (nombre, foto y rol).
+    # Solo accesible si el usuario pertenece al grupo.
+    # 1. Comprobamos si el usuario actual está dentro del grupo
+    pertenece = await is_user_in_group(current_user.id, group_id)
+
+    if not pertenece:
+        raise HTTPException(
+            status_code=403,
+            detail="Acceso denegado: No perteneces a este grupo y no puedes ver a sus miembros."
+        )
+
+    # 2. Si ha pasado el candado, llamamos al servicio que devuelve los datos completos
+    return await group_service.get_hydrated_group_members(group_id)
+
+
+
 

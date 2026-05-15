@@ -2,9 +2,16 @@ from typing import List, Tuple, Optional
 
 from beanie.odm.operators.find.comparison import In
 
+from app.models.event import Event
 from app.models.group import Group
 from app.models.group_member import GroupMember
+from app.models.schedule import WeekSchedule
+from app.models.task import Task
 from app.models.user import User
+from app.models.list import UserList
+from app.schemas.social import GroupMemberDetailOut
+
+
 
 async def create_group(current_user: User, name: str) -> Group:
     # 1. Crear el grupo
@@ -118,4 +125,32 @@ async def is_user_in_group(user_id: int, group_id: int) -> bool:
         GroupMember.user_id == user_id
     )
     return member is not None
+async def get_hydrated_group_members(group_id: int) -> List[GroupMemberDetailOut]:
+    # 1. Sacamos las membresías de la base de datos
+    membresias = await GroupMember.find(GroupMember.group_id == group_id).to_list()
+
+    if not membresias:
+        return []
+
+    # 2. Extraemos los IDs de los usuarios
+    user_ids = [m.user_id for m in membresias]
+
+    # 3. Traemos todos los perfiles de golpe (¡Optimizado!)
+    users = await User.find(In(User.id, user_ids)).to_list()
+    users_map = {u.id: u for u in users}
+
+    # 4. Mezclamos los datos (Membresía + Perfil)
+    return [
+        GroupMemberDetailOut(
+            user_id=m.user_id,
+            nickname=user.nickname,
+            user_photo=user.user_photo,
+            role=m.role
+        )
+        for m in membresias
+        if (user := users_map.get(m.user_id))
+    ]
+
+
+
 

@@ -1,4 +1,8 @@
+from beanie.odm.operators.find.comparison import In
+from beanie.odm.operators.find.logical import Or
 from fastapi import HTTPException, status
+
+from app.models.group_member import GroupMember
 from app.models.schedule import WeekSchedule, BlockWeekSchedule
 from app.schemas.schedule import (
     WeekScheduleCreate, WeekScheduleUpdate,
@@ -33,7 +37,11 @@ async def create_schedule(user_id: int, schedule_in: WeekScheduleCreate) -> Week
     return new_schedule
 
 async def get_schedules_by_user(user_id: int) -> list[WeekSchedule]:
-    return await WeekSchedule.find(WeekSchedule.user_id == user_id).to_list()
+    membresias = await GroupMember.find(GroupMember.user_id == user_id).to_list()
+    group_ids = [m.group_id for m in membresias]
+    if not group_ids:
+        return await WeekSchedule.find(WeekSchedule.user_id == user_id).to_list()
+    return await WeekSchedule.find(Or(WeekSchedule.user_id == user_id, In(WeekSchedule.group_id, group_ids))).to_list()
 
 async def update_schedule(user_id: int, schedule_id: int, schedule_in: WeekScheduleUpdate) -> WeekSchedule:
     schedule = await _get_schedule_or_404(schedule_id, user_id)

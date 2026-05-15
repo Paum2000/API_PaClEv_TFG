@@ -29,6 +29,12 @@ class GroupMemberOut(BaseModel):
     user_id: int
     model_config = ConfigDict(populate_by_name=True, from_attributes=True)
 
+class GroupMemberDetailOut(BaseModel):
+    user_id: int
+    nickname: str
+    user_photo: Optional[str] = None
+    role: str  # "admin" o "member"
+
 
 # --- AMIGOS ---
 

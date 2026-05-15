@@ -1,3 +1,7 @@
+from beanie.odm.operators.find.comparison import In
+from beanie.odm.operators.find.logical import Or
+
+from app.models.group_member import GroupMember
 from app.models.task import Task
 from app.schemas.task import TaskCreate, TaskUpdate
 from app.models.user import User
@@ -39,7 +43,21 @@ async def create_task(task_in: TaskCreate):
     return new_task
 
 async def get_user_tasks(user_id: int):
-    return await Task.find(Task.user_id == user_id).to_list()
+    # 1. Buscamos en qué grupos está el usuario
+    membresias = await GroupMember.find(GroupMember.user_id == user_id).to_list()
+    group_ids = [m.group_id for m in membresias]
+
+    # 2. Si NO está en ningún grupo, solo le devolvemos sus tareas privadas
+    if not group_ids:
+        return await Task.find(Task.user_id == user_id).to_list()
+
+    # 3. Si SÍ tiene grupos, le devolvemos la mezcla (Las suyas OR las de sus grupos)
+    return await Task.find(
+        Or(
+            Task.user_id == user_id,
+            In(Task.group_id, group_ids)
+        )
+    ).to_list()
 
 async def get_task(task_id: int):
     return await Task.get(task_id)
