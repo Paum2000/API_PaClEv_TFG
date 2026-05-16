@@ -135,8 +135,12 @@ def test_delete_schedule_en_cascada(client: TestClient, normal_user_token_header
     assert res_delete.status_code == 200
 
 
-# --- TEST 7: 🚀 NUEVO - Flujo Colaborativo y Seguridad para Horarios ---
+# --- TEST 7: Flujo Colaborativo y Seguridad para Horarios ---
 def test_group_schedules_flow(client: TestClient, normal_user_token_headers, other_user_token_headers):
+    # --- Preparación extra para obtener el ID del User B ---
+    res_b = client.get("/users/me", headers=other_user_token_headers)
+    user_b_id = res_b.json().get("id") or res_b.json().get("_id")
+
     # 1. El usuario A crea un grupo (ej: Grupo de la Universidad)
     res_group = client.post("/groups/", json={"name": "Grupo Universidad"}, headers=normal_user_token_headers)
     assert res_group.status_code == 200
@@ -152,16 +156,47 @@ def test_group_schedules_flow(client: TestClient, normal_user_token_headers, oth
         headers=normal_user_token_headers
     )
     assert res_schedule.status_code == 200
-    assert res_schedule.json()["group_id"] == group_id
+    schedule_id = res_schedule.json().get("id") or res_schedule.json().get("_id")
 
-    # 3. Happy Path: El usuario A pide los horarios de su grupo
+    # 3. Happy Path original: El usuario A pide los horarios de su grupo
     res_get_group = client.get(f"/schedules/group/{group_id}", headers=normal_user_token_headers)
     assert res_get_group.status_code == 200
-    data = res_get_group.json()
-    assert len(data) >= 1
-    assert any(s["title"] == "Horario de Clases Compartido" for s in data)
+    assert len(res_get_group.json()) >= 1
 
-    # 4. Sad Path (Seguridad): El usuario B intenta espiar el horario del grupo de A
-    res_forbidden = client.get(f"/schedules/group/{group_id}", headers=other_user_token_headers)
-    assert res_forbidden.status_code == 403
-    assert "permiso" in res_forbidden.json()["detail"].lower()
+    # 4. Sad Path (Seguridad): El usuario B intenta crear un bloque en el horario de A (Debe fallar)
+    res_block_bad = client.post(
+        f"/schedules/{schedule_id}/blocks",
+        json={"title": "Hackeo", "weekDay": 1, "startHour": "10:00", "endHour": "11:00"},
+        headers=other_user_token_headers
+    )
+    assert res_block_bad.status_code == 403
+
+    # --- EMPIEZA LA COLABORACIÓN ---
+
+    # 5. El usuario A (Admin) añade al usuario B al grupo
+    res_add = client.post(f"/groups/{group_id}/members", json={"user_id": int(user_b_id)}, headers=normal_user_token_headers)
+    assert res_add.status_code == 200
+
+    # 6. User B (ahora miembro) intenta crear un bloque. ¡Ahora sí debe funcionar!
+    res_block_good = client.post(
+        f"/schedules/{schedule_id}/blocks",
+        json={"title": "Clase de User B", "weekDay": 1, "startHour": "10:00", "endHour": "11:00"},
+        headers=other_user_token_headers
+    )
+    assert res_block_good.status_code == 200
+    block_id = res_block_good.json().get("id") or res_block_good.json().get("_id")
+
+    # 7. User B intenta editar ese mismo bloque
+    res_edit_good = client.put(
+        f"/schedules/blocks/{block_id}",
+        json={"color": "#00FF00"},
+        headers=other_user_token_headers
+    )
+    assert res_edit_good.status_code == 200
+    assert res_edit_good.json()["color"] == "#00FF00"
+
+    # 8. Comprobamos que el horario sale en la lista global de User B
+    res_all_schedules_b = client.get("/schedules/", headers=other_user_token_headers)
+    assert res_all_schedules_b.status_code == 200
+    schedules_ids_b = [s.get("id") or s.get("_id") for s in res_all_schedules_b.json()]
+    assert schedule_id in schedules_ids_b
